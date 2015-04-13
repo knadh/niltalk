@@ -1,0 +1,36 @@
+{{define "content"}}
+<h1 class="page-title">Terms &amp; Privacy policy</h1>
+
+<h2>Data storage and retention</h2>
+<p>Niltalk does not collect or store any sort of information from its users on disk&mdash;no IP addresses, chat messages, or nick names.
+Chat messages from users pass through Niltalk to other users without undergoing any form of logging or caching. Chatroom IDs, nicknames, and passwords (bcrypt hashed) are held in the memory
+(RAM) transiently for the life of a chatroom. This information is flushed on manual disposal or after {{ .Config.RoomTimeout }} seconds of inactivity (no messages exchanged).</p>
+
+<h2>Communication</h2>
+All communication happens over <a href="https://www.ssllabs.com/ssltest/analyze.html?d=niltalk.com">SSL (SHA256+RSA)</a>.
+
+
+<h2>Cookies</h2>
+<p>Cookies are small pieces of information stored on the user's computer. Niltalk may set and retrieve session cookies. 
+The session cookies do not contain any personally identifiable data but randomly generated session tokens to keep the user
+logged in during the lifetime of a chatroom. They are also short lived&mdash;a browser restart flushes them.</p>
+
+<h2>Disclaimer</h2>
+<p>Niltalk and its services are provided "as is" and without warranties of any kind, either expresses or implied. In no event shall
+Niltalk, its proprietor or its contributors be liable for any direct, indirect, incidental, special, exemplary, or 
+consequential damages (including, but not limited to, procurement of substitute goods or services; loss of use, data, or profits; 
+or business interruption) however caused and on any theory of liability, whether in contract, strict liability, 
+or tort (including negligence or otherwise) arising in any way out of the use of this software, even if advised of the 
+possibility of such damage.</p>
+
+
+<h2>No guarantees or warranties</h2>
+<p>Due to technical, legal and practical limitations, Niltalk cannot warrant and does not guarantee uninterrupted, timely, secure, 
+or error free services. Niltalk, its proprietors and contributors make no warranty that:
+1) the software and service will meet your requirements.
+2) the results that obtained from the software and service will be effective, accurate or reliable.
+3) the quality of the software and service will meet your expectations.
+4) any errors in the software and service will be corrected.</p>
+
+
+{{end}}

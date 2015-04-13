@@ -1,0 +1,47 @@
+{
+	// websocket server
+	"address": "0.0.0.0:9000",
+	"url": "http://localhost:9000", // no trailing slash
+	"websocket_route": "/w/",
+	"room_route": "/r/",
+
+	// redis cache server
+	"cache_address": "127.0.0.1:6379",
+	"cache_pool_active": 100,
+	"cache_pool_idle": 80,
+	"cache_prefix_room": "room:",
+	"cache_prefix_sessions": "sessions:",
+
+	// timeout interval in (seconds) if a peer doesn't send a "ping"
+	// ping should always be less than pong
+	"ping_timeout": 5,
+	"pong_timeout": 30,
+	"write_timeout": 3,
+
+	// message lengths
+	"read_buffer": 2056,
+	"write_buffer": 2056,
+	"max_message_length": 1500,
+
+	// maximum number of outoging messages in a peer buffer
+	// that can fill up before the connection is closed
+	"max_message_queue": 5,
+
+	// rate limiting (messages / second)
+	"rate_limit_interval": 10,
+	"rate_limit_messages": 20,
+
+	"max_rooms": 1000,
+	"max_peers_per_room": 10,
+	"room_timeout": 600, // period of inactivity after which a room will be auto-disposed
+	"room_age": 7200, // how long will the room id persist in the db before first use?
+
+	// interval in (seconds) to release free'd memory back to the OS
+	// this is expensive. best to set a large interval
+	"memory_release_interval": 1800,
+
+	// session cookie
+	"session_cookie": "niltoken",
+
+	"debug": true
+}

@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<title>{{if .Title}} {{.Title}} - Niltalk {{else}}Niltalk &mdash; Instant, secure, disposable chat{{end}}</title>
+	<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+
+	{{if .Description}}
+	<meta name="description" content="{{.Description}}" />
+	{{else}}
+	<meta name="description" content="Instantly create secure, private, and disposable chat rooms and chat away for FREE!" />
+	{{end}}
+	<meta name="keywords" content="instant chat, secure chat, free online chat, free online chatroom, encrypted chat, disposable chatrooms, encrypted chatrooms, ssl chat, secure messaging, secure instant messaging" />
+	<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
+
+	<link rel="image_src" href="{{.Config.Url}}/static/images/thumbnail.png" />
+	<meta property="og:image" content="{{.Config.Url}}/static/images/thumbnail.png" />
+	<link rel="shortcut icon" href="{{.Config.Url}}/static/images/favicon.png" type="image/x-icon" />
+
+	<link href='https://fonts.googleapis.com/css?family=Lato:400,300' rel='stylesheet' type='text/css'>
+	<link href='https://fonts.googleapis.com/css?family=Roboto:400,300' rel='stylesheet' type='text/css'>
+	<link href="/static/base.css" rel="stylesheet" />
+	<link href="/static/style.css" rel="stylesheet" />
+
+	<script src="/static/lib.js"></script>
+	<script src="/static/app.js"></script>
+	<script>
+		var root = "{{.Config.Url}}", route = "{{.Config.RoomRoute}}", ws_route = "{{.Config.WebsocketRoute}}";
+		{{if .Room}}
+			var room_id = "{{.Room.Id}}";
+		{{end}}
+	</script>
+</head>
+<body class="{{if .Body}} {{.Body}} {{end}}">
+<div id="wrap" class="grid-1000">
+	<header id="header" class="row">
+		<div class="col6" id="logo">
+			<a href="{{.Config.Url}}"><img src="/static/images/logo.png" /></a>
+		</div>
+		<div class="room-url col6 last">
+		</div>
+	</header>
+	<div id="content">
+		{{template "content" .}}
+	</div>
+
+	<div id="notification"> </div>
+	<footer id="footer">
+		<nav>
+			<a href="/pages/privacy">Terms &amp; Privacy</a>
+		</nav>
+	</footer>
+</div>
+<script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+  ga('create', 'UA-5537752-8', 'auto');
+  ga('send', 'pageview');
+
+</script>
+</body>
+</html>

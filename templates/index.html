@@ -1,0 +1,44 @@
+{{define "content"}}
+	<div id="intro" class="row">
+		<img src="static/images/chat.png" alt="" />
+		<h1>Free, instant, secure, disposable chat</h1>
+	</div>
+	<form method="post" action="/r/create" id="form-create" autocomplete="off">
+		<fieldset class="create">
+			<p>
+				<input type="password" name="pasword2" value="password" style="display: none" />
+				<input type="password" class="big" id="password" placeholder="Pick a password" title="Minimum 5 characters" required pattern=".{5,100}" maxlength="100" />
+				<input type="submit" class="button big" id="button-create" value="Create room" />
+			</p>
+		</fieldset>
+		<fieldset class="created">
+			<p>Your room has been created! Share this URL with your peers.</p>
+			<p><input type="text" id="room-url" /></p>
+			<p><a href="" id="room-link" class="button">Go to room &rarr;</a></p>
+		</fieldset>
+	</form>
+
+	<section id="explained" class="row">
+		<ul class="no">
+			<li class="row">
+				<div class="col4">
+					<h2>How does it work?</h2>
+				</div>
+				<div class="col8 last">
+					<p>Nilktalk lets you create instant, password protected chat rooms without the
+					need to signup. Simply click the "Create" button, and share the unique chat URL with your peers.</p>
+
+					<p>All communication happens over SSL. Niltalk doesn't record or log
+						IP addresses, messages, or peer handles anywhere.
+					</p>
+					<p>Once a room is created, it has a lifetime of {{.RoomAge}} minutes before the first login.
+					Then, the room is automatically deleted after {{.RoomTimeout}} minutes of inactivity (no messages exchanged).</p>
+					<p>
+						While in a room, you or any of your peers can dispose off the room
+						with the click of a button.
+					</p>
+				</div>
+			</li>
+		</ul>
+	</section>
+{{end}}

@@ -1,0 +1,8 @@
+{{define "content"}}
+	<div id="error" class="compact">
+		<h1>{{.ErrorTitle}}</h1>
+		{{if .ErrorDescription}}
+			{{.ErrorDescription}}
+		{{end}}
+	</div>
+{{end}}

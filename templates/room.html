@@ -1,0 +1,64 @@
+{{define "content"}}
+	<form method="post" action="{{.Config.Url}}/{{.Room.Id}}/login" id="form-login" class="compact" autocomplete="off">
+		<fieldset class="create">
+			<h1>Join room #{{.Room.Id}}</h1>
+			<div style="display: none"><input type="password"/></div>
+			<input type="password" name="p" value="p" style="display:none" />
+			
+			<p>
+				<input type="password" id="password" placeholder="Password" required pattern=".{5,100}" maxlength="100" autocomplete="off" />
+			</p>
+			<p>
+				<input type="text" id="handle" placeholder="Pick a nickname (optional)" pattern=".{3,30}" maxlength="30" autocomplete="off" />
+			</p>
+			<p>
+				<input type="submit" class="button" id="button-login" value="Login" />
+			</p>
+		</fieldset>
+	</form>
+	<div id="chat">
+		<div class="row">
+			<div class="col8 chat">
+				<ul id="messages" class="no">
+					<li class="item">
+						<span class="time"></span>
+						<span class="peer"><span class="avatar"></span><span class="handle"></span></span>
+						<span class="message"></span>
+					</li>
+				</ul>
+			</div>
+			<sidebar class="col4 last" id="sidebar">
+				<h2 class="title"><span id="peer-count"></span></h2>
+				<ul id="peers" class="no">
+					<li class="peer">
+						<span class="avatar"></span>
+						<span class="handle"></span>
+					</li>
+				</ul>
+			</sidebar>
+		</div>
+		<form method="post" action="" class="row action" id="form-chat">
+			<fieldset class="col6">
+				<textarea id="message" class="charlimited" maxlength="512"></textarea>
+			</fieldset>
+			<fieldset class="col6 last">
+				<input type="submit" class="button" value="Send" id="bt-send" />
+				<input type="button" class="button dispose" value="Dispose &times;" id="bt-dispose" />
+					<span class="sounds">
+						<input type="checkbox" id="sounds" value="1" checked="true" />
+						<label for="sounds" class="ico"></label>
+					</span>
+			</fieldset>
+			<div class="row">
+				<div class="room-url">
+					<a href="#" id="room-link" class="expand-to-textbox" data-value="{{.Config.Url}}{{.Config.RoomRoute}}{{.Room.Id}}">&#9741;</a>
+				</div>
+			</div>
+		</form>
+	</div>
+	<div id="reconnect">
+		<h1>Disconnected.</h1>
+		<a href="#" id="bt-reconnect" class="button">Try reconnecting</a>
+	</div>
+	<h1 id="notice" class="compact"></h1>
+{{end}}
