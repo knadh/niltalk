@@ -309,6 +309,7 @@ $(document).ready(function() {
 	function roomCreated(id) {
 		var url = _route + id;
 
+		$("#form-create").attr("action", url).attr("method", "get").unbind("submit");
 		$("#form-create .create").remove();
 		$("#room-url").val(url);
 		$("#room-link").attr("href", url);
