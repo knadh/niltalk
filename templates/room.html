@@ -6,10 +6,11 @@
 			<input type="password" name="p" value="p" style="display:none" />
 			
 			<p>
-				<input type="password" id="password" placeholder="Password" required pattern=".{5,100}" maxlength="100" autocomplete="off" />
+				<input type="password" id="password" placeholder="Password" required pattern=".{5,100}" maxlength="100" autocomplete="off" title="5 to 100 characters" />
 			</p>
 			<p>
-				<input type="text" id="handle" placeholder="Pick a nickname (optional)" pattern=".{3,30}" maxlength="30" autocomplete="off" />
+				<input type="text" id="handle" placeholder="Pick a nickname (optional)" pattern=".{3,30}" maxlength="30" autocomplete="off" title="3 to 30 characters" />
+				<span class="help">3 to 30 characters</span>
 			</p>
 			<p>
 				<input type="submit" class="button" id="button-login" value="Login" />

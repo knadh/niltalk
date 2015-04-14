@@ -326,6 +326,11 @@ form .charlimit-counter {
 	right: 40px;
 	color: #999;
 }
+form .help {
+	display: block;
+	font-size: .75em;
+	color: #bbb;
+}
 
 /* expand to textbox */
 a.expand-to-textbox {
