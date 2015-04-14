@@ -8,5 +8,9 @@ Niltalk is a simple, secure, persistence-free web based multi-room chat server +
 ### Installation
 `go get github.com/goniltalk/niltalk`
 
+You can download the package dependencies by switching to the `niltalk` directory in your GOPATH and running `go get ./...`
+
 ### Usage
-You need a live Redis instance. Configure the necessary values in `config.json` before running.
+- Have a Redis instance running
+- Configure the necessary values in `config.json`
+- Execute `./run` in the `niltalk` directory in your GOPATH (You may have to set the permission to 755 by doing `chmod 755 ./run`)
