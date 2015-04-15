@@ -24,7 +24,7 @@ func TestMap(t *testing.T) {
 	// Put a map.
 	err := db.PutMap("nilmap", "name", "maptest", "value", 1)
 	if err != nil {
-		t.Fatal("Putmap failed %v,", err)
+		t.Fatalf("Putmap failed %v,", err)
 	}
 
 	// Retrieve the a map.
@@ -72,7 +72,7 @@ func TestSet(t *testing.T) {
 	// Check for an inexistent value.
 	exists, err = db.SetValueExists("nilset", "val3")
 	if err != nil {
-		t.Error("SetExists failed, %v", err)
+		t.Errorf("SetExists failed, %v", err)
 	}
 
 	if exists {
