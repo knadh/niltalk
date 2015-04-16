@@ -3,7 +3,7 @@ http://niltalk.com
 
 April 2015; License: AGPL3
 
-Niltalk is a simple, secure, persistence-free web based multi-room chat server + client  written in Go that uses Websockets for communication.
+Niltalk is a simple, private, persistence-free web based multi-room chat server + client  written in Go that uses Websockets for communication.
 
 ### Installation
 `go get github.com/goniltalk/niltalk`
