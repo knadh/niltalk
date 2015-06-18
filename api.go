@@ -29,7 +29,7 @@ func indexPage(w http.ResponseWriter, r *http.Request) {
 		"RoomTimeout": config.RoomTimeout / 60,
 		"RoomAge":     config.RoomAge / 60,
 	}
-	respond(w, templates["index"], c, 200)
+	respond(w, templates["index"], c, http.StatusOK)
 }
 
 // Static pages.
@@ -38,7 +38,7 @@ func staticPage(w http.ResponseWriter, r *http.Request) {
 
 	tpl, err := template.ParseFiles("templates/base.html", "pages/"+page_id+".html")
 	if err == nil {
-		respond(w, tpl, nil, 200)
+		respond(w, tpl, nil, http.StatusOK)
 	} else {
 		http.NotFound(w, r)
 	}
@@ -59,7 +59,7 @@ func roomPage(ctx stack.Context) http.Handler {
 		w.Header().Set("Pragma", "no-cache")
 		w.Header().Set("Expires", "0")
 
-		respond(w, templates["room"], ctx, 200)
+		respond(w, templates["room"], ctx, http.StatusOK)
 	})
 }
 
@@ -67,14 +67,14 @@ func roomPage(ctx stack.Context) http.Handler {
 func createRoom(w http.ResponseWriter, r *http.Request) {
 	password := r.FormValue("password")
 	if len(password) < 5 {
-		respondJSON(w, "Invalid password (min 4 chars)", nil, 400)
+		respondJSON(w, "Invalid password (min 4 chars)", nil, http.StatusBadRequest)
 		return
 	}
 
 	// Hash the password.
 	hash, err := bcrypt.GenerateFromPassword([]byte(password), 5)
 	if err != nil {
-		respondJSON(w, "Could not register password", nil, 500)
+		respondJSON(w, "Could not register password", nil, http.StatusInternalServerError)
 		return
 	}
 
@@ -83,20 +83,20 @@ func createRoom(w http.ResponseWriter, r *http.Request) {
 
 	// Couldn't generate a unique id.
 	if err != nil {
-		respondJSON(w, "Could not create room id", nil, 500)
+		respondJSON(w, "Could not create room id", nil, http.StatusInternalServerError)
 		return
 	}
 
 	err = newRoom(room_id, hash)
 	if err != nil {
-		respondJSON(w, err.Error(), nil, 200)
+		respondJSON(w, err.Error(), nil, http.StatusOK)
 	}
 
 	response := struct {
 		Id string `json:"id"`
 	}{room_id}
 
-	respondJSON(w, "", response, 200)
+	respondJSON(w, "", response, http.StatusOK)
 }
 
 // Dispose a room.
@@ -110,7 +110,7 @@ func disposeRoom(ctx stack.Context) http.Handler {
 		response := struct {
 			Message string `json:"message"`
 		}{"Room disposed"}
-		respondJSON(w, "", response, 200)
+		respondJSON(w, "", response, http.StatusOK)
 	})
 }
 
@@ -121,7 +121,7 @@ func login(ctx stack.Context) http.Handler {
 
 		// Too many?
 		if room.peerCount() >= config.MaxPeersPerRoom {
-			respondJSON(w, "Room is full", nil, 503)
+			respondJSON(w, "Room is full", nil, http.StatusServiceUnavailable)
 			return
 		}
 
@@ -139,7 +139,7 @@ func login(ctx stack.Context) http.Handler {
 				clearSessions(room)
 				room.stop <- 0
 
-				respondJSON(w, "Room's gone", nil, 500)
+				respondJSON(w, "Room's gone", nil, http.StatusInternalServerError)
 				return
 			}
 
@@ -160,12 +160,12 @@ func login(ctx stack.Context) http.Handler {
 			response := struct {
 				Token string `json:"token"`
 			}{token}
-			respondJSON(w, "", response, 200)
+			respondJSON(w, "", response, http.StatusOK)
 
 			return
 		}
 
-		respondJSON(w, "Incorrect login", nil, 401)
+		respondJSON(w, "Incorrect login", nil, http.StatusForbidden)
 	})
 }
 
@@ -174,7 +174,7 @@ func webSocketHandler(ctx stack.Context) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != "GET" {
 			Logger.Println("405 Method not allowed:", r.RemoteAddr, r.Method)
-			http.Error(w, "Method not allowed", 405)
+			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 			return
 		}
 
@@ -183,7 +183,7 @@ func webSocketHandler(ctx stack.Context) http.Handler {
 		// Peers exceeded?
 		if room.peerCount() >= config.MaxPeersPerRoom {
 			Logger.Println("max_peers_per_room exceeded at", config.MaxPeersPerRoom)
-			http.Error(w, "Too many peers", 503)
+			http.Error(w, "Too many peers", http.StatusServiceUnavailable)
 			return
 		}
 
@@ -254,13 +254,13 @@ func hasRoom(ctx stack.Context, next http.Handler) http.Handler {
 
 			// Couldn't load room for unknown reasons.
 			if err != nil {
-				respondError(w, err.Error(), "", 500)
+				respondError(w, err.Error(), "", http.StatusInternalServerError)
 				return
 			}
 
 			// Room doesn't exist.
 			if room == nil {
-				respondError(w, "Room not found", "", 404)
+				respondError(w, "Room not found", "", http.StatusNotFound)
 				return
 			}
 		}
@@ -289,7 +289,7 @@ func hasAuth(ctx stack.Context, next http.Handler) http.Handler {
 		}
 
 		if !valid {
-			respondJSON(w, "Not authorised", nil, 401)
+			respondJSON(w, "Not authorised", nil, http.StatusForbidden)
 			return
 		}
 
@@ -423,7 +423,7 @@ func preparePeersList(room *Room, peer *Peer, status bool) []byte {
 // Standard JSON http response.
 func respondJSON(w http.ResponseWriter, error string, data interface{}, code int) {
 	if code == 0 {
-		code = 200
+		code = http.StatusOK
 	}
 
 	w.WriteHeader(code)
@@ -442,14 +442,14 @@ func respondJSON(w http.ResponseWriter, error string, data interface{}, code int
 	if err == nil {
 		fmt.Fprint(w, string(resp))
 	} else {
-		http.Error(w, "Internal server error", 500)
+		http.Error(w, "Internal server error", http.StatusInternalServerError)
 	}
 }
 
 // Standard HTML response.
 func respond(w http.ResponseWriter, tpl *template.Template, context map[string]interface{}, code int) {
 	if code == 0 {
-		code = 200
+		code = http.StatusOK
 	}
 
 	// Additional variables passed to the template?
@@ -475,7 +475,7 @@ func respond(w http.ResponseWriter, tpl *template.Template, context map[string]i
 // Standard HTML error response.
 func respondError(w http.ResponseWriter, title string, description string, code int) {
 	if code == 0 {
-		code = 500
+		code = http.StatusInternalServerError
 	}
 
 	ctx := map[string]interface{}{
