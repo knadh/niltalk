@@ -33,12 +33,16 @@ var (
 )
 
 func init() {
+	// Load configuration from file.
+	configFile := flag.String("config", "config.json", "Configuration file")
+
 	// Command line arguments.
 	flag.Parse()
 
-	// Load configuration from file.
-	configFile := flag.String("config", "config.json", "Configuration file")
-	jsonconfig.Load(*configFile, &config)
+	err := jsonconfig.Load(*configFile, &config)
+	if err != nil {
+		panic(fmt.Sprintf("Error parsing or reading the config: %v", err))
+	}
 
 	// Initialisations.
 	dbPool = NewDBpool(config.CacheAddress, config.CachePassword, config.CachePoolActive, config.CachePoolIdle)
