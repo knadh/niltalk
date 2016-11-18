@@ -45,22 +45,20 @@ func staticPage(w http.ResponseWriter, r *http.Request) {
 }
 
 // Chat room page.
-func roomPage(ctx stack.Context) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		room := ctx["room"].(*Room)
-		ctx := map[string]interface{}{
-			"Room":  room,
-			"Page":  "room",
-			"Title": "Join #" + room.Id,
-		}
+func roomPage(ctx *stack.Context, w http.ResponseWriter, r *http.Request) {
+	room := ctx.Get("room").(*Room)
+	params := map[string]interface{}{
+		"Room":  room,
+		"Page":  "room",
+		"Title": "Join #" + room.Id,
+	}
 
-		// Disable browser caching.
-		w.Header().Set("Cache-Control", "no-cache, no-store, must-revalidate")
-		w.Header().Set("Pragma", "no-cache")
-		w.Header().Set("Expires", "0")
+	// Disable browser caching.
+	w.Header().Set("Cache-Control", "no-cache, no-store, must-revalidate")
+	w.Header().Set("Pragma", "no-cache")
+	w.Header().Set("Expires", "0")
 
-		respond(w, templates["room"], ctx, http.StatusOK)
-	})
+	respond(w, templates["room"], params, http.StatusOK)
 }
 
 // Validate a room creation request and create the roon.
@@ -100,145 +98,140 @@ func createRoom(w http.ResponseWriter, r *http.Request) {
 }
 
 // Dispose a room.
-func disposeRoom(ctx stack.Context) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		room := ctx["room"].(*Room)
+func disposeRoom(ctx *stack.Context, w http.ResponseWriter, r *http.Request) {
+	room := ctx.Get("room").(*Room)
 
-		clearSessions(room)
-		room.stop <- 0
+	clearSessions(room)
+	room.stop <- 0
 
-		response := struct {
-			Message string `json:"message"`
-		}{"Room disposed"}
-		respondJSON(w, "", response, http.StatusOK)
-	})
+	response := struct {
+		Message string `json:"message"`
+	}{"Room disposed"}
+
+	respondJSON(w, "", response, http.StatusOK)
 }
 
 // Log a peer into the room after password validation.
-func login(ctx stack.Context) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		room := ctx["room"].(*Room)
+func login(ctx *stack.Context, w http.ResponseWriter, r *http.Request) {
+	room := ctx.Get("room").(*Room)
 
-		// Too many?
-		if room.peerCount() >= config.MaxPeersPerRoom {
-			respondJSON(w, "Room is full", nil, http.StatusServiceUnavailable)
+	// Too many?
+	if room.peerCount() >= config.MaxPeersPerRoom {
+		respondJSON(w, "Room is full", nil, http.StatusServiceUnavailable)
+		return
+	}
+
+	// Password validation.
+	r.ParseForm()
+	password := []byte(r.FormValue("password"))
+
+	err := bcrypt.CompareHashAndPassword(room.password, password)
+
+	// Password is validated.
+	if err == nil {
+		// Register a new session in the DB.
+		token, err := newSession(room)
+		if err != nil {
+			clearSessions(room)
+			room.stop <- 0
+
+			respondJSON(w, "Room's gone", nil, http.StatusInternalServerError)
 			return
 		}
 
-		// Password validation.
-		r.ParseForm()
-		password := []byte(r.FormValue("password"))
+		// Session cookie for the webapp.
+		c1 := &http.Cookie{Name: config.SessionCookie,
+			Value: token,
+			Path:  config.RoomRoute + room.Id}
 
-		err := bcrypt.CompareHashAndPassword(room.password, password)
+		// Session cookie for Websockets.
+		c2 := &http.Cookie{Name: config.SessionCookie,
+			Value: token,
+			Path:  config.WebsocketRoute + room.Id}
 
-		// Password is validated.
-		if err == nil {
-			// Register a new session in the DB.
-			token, err := newSession(room)
-			if err != nil {
-				clearSessions(room)
-				room.stop <- 0
+		http.SetCookie(w, c1)
+		http.SetCookie(w, c2)
 
-				respondJSON(w, "Room's gone", nil, http.StatusInternalServerError)
-				return
-			}
+		// All good. Return the session token to the client.
+		response := struct {
+			Token string `json:"token"`
+		}{token}
+		respondJSON(w, "", response, http.StatusOK)
 
-			// Session cookie for the webapp.
-			c1 := &http.Cookie{Name: config.SessionCookie,
-				Value: token,
-				Path:  config.RoomRoute + room.Id}
+		return
+	}
 
-			// Session cookie for Websockets.
-			c2 := &http.Cookie{Name: config.SessionCookie,
-				Value: token,
-				Path:  config.WebsocketRoute + room.Id}
-
-			http.SetCookie(w, c1)
-			http.SetCookie(w, c2)
-
-			// All good. Return the session token to the client.
-			response := struct {
-				Token string `json:"token"`
-			}{token}
-			respondJSON(w, "", response, http.StatusOK)
-
-			return
-		}
-
-		respondJSON(w, "Incorrect login", nil, http.StatusForbidden)
-	})
+	respondJSON(w, "Incorrect login", nil, http.StatusForbidden)
 }
 
 // Websocket connection request handler.
-func webSocketHandler(ctx stack.Context) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.Method != "GET" {
-			Logger.Println("405 Method not allowed:", r.RemoteAddr, r.Method)
-			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
-			return
-		}
+func webSocketHandler(ctx *stack.Context, w http.ResponseWriter, r *http.Request) {
+	if r.Method != "GET" {
+		Logger.Println("405 Method not allowed:", r.RemoteAddr, r.Method)
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
 
-		room := ctx["room"].(*Room)
+	room := ctx.Get("room").(*Room)
 
-		// Peers exceeded?
-		if room.peerCount() >= config.MaxPeersPerRoom {
-			Logger.Println("max_peers_per_room exceeded at", config.MaxPeersPerRoom)
-			http.Error(w, "Too many peers", http.StatusServiceUnavailable)
-			return
-		}
+	// Peers exceeded?
+	if room.peerCount() >= config.MaxPeersPerRoom {
+		Logger.Println("max_peers_per_room exceeded at", config.MaxPeersPerRoom)
+		http.Error(w, "Too many peers", http.StatusServiceUnavailable)
+		return
+	}
 
-		// All good, upgrade to Websocket.
-		ws, err := upgrader.Upgrade(w, r, nil)
-		if err != nil {
-			Logger.Println("Websocket upgrade failed:", r.RemoteAddr, err)
-			return
-		}
+	// All good, upgrade to Websocket.
+	ws, err := upgrader.Upgrade(w, r, nil)
+	if err != nil {
+		Logger.Println("Websocket upgrade failed:", r.RemoteAddr, err)
+		return
+	}
 
-		// Assign a handle to the peer.
-		handle := r.URL.Query().Get("handle")
-		if len(handle) < 3 {
-			handle = fmt.Sprintf("User%v", room.counter)
-		}
-		id := uniuri.NewLen(6)
+	// Assign a handle to the peer.
+	handle := r.URL.Query().Get("handle")
+	if len(handle) < 3 {
+		handle = fmt.Sprintf("User%v", room.counter)
+	}
+	id := uniuri.NewLen(6)
 
-		// Create a peer instance.
-		peer := &Peer{sendQueue: make(chan []byte),
-			ws:      ws,
-			id:      id,
-			handle:  handle,
-			room_id: room.Id}
+	// Create a peer instance.
+	peer := &Peer{sendQueue: make(chan []byte),
+		ws:      ws,
+		id:      id,
+		handle:  handle,
+		room_id: room.Id}
 
-		// Register the peer to the room.
-		room.register <- peer
+	// Register the peer to the room.
+	room.register <- peer
 
-		// Increment the peer count.
-		room.counter += 1
+	// Increment the peer count.
+	room.counter += 1
 
-		// Start the broadcaster for the peer.
-		go peer.talk()
+	// Start the broadcaster for the peer.
+	go peer.talk()
 
-		// Send the identity information back to the peer.
-		content := struct {
-			Action int    `json:"a"`
-			Id     string `json:"id"`
-			Handle string `json:"handle"`
-		}{
-			TypeHandle,
-			peer.id,
-			peer.handle,
-		}
+	// Send the identity information back to the peer.
+	content := struct {
+		Action int    `json:"a"`
+		Id     string `json:"id"`
+		Handle string `json:"handle"`
+	}{
+		TypeHandle,
+		peer.id,
+		peer.handle,
+	}
 
-		peer.sendQueue <- prepareMessage(content)
+	peer.sendQueue <- prepareMessage(content)
 
-		// Start listener.
-		peer.listen()
-	})
+	// Start listener.
+	peer.listen()
 }
 
 // Middleware.
 // HTTP room handler (middleware) to validate all room requests.
 // Attempt to get the room from 1) memory 2) the DB, if not found, fail with a 404.
-func hasRoom(ctx stack.Context, next http.Handler) http.Handler {
+func hasRoom(ctx *stack.Context, next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		var (
 			room *Room
@@ -266,14 +259,14 @@ func hasRoom(ctx stack.Context, next http.Handler) http.Handler {
 		}
 
 		// Context for chained middleware.
-		ctx["room"] = room
+		ctx.Put("room", room)
 
 		next.ServeHTTP(w, r)
 	})
 }
 
 // Authenticate an http request (with cookies).
-func hasAuth(ctx stack.Context, next http.Handler) http.Handler {
+func hasAuth(ctx *stack.Context, next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		valid := false
 
@@ -282,8 +275,8 @@ func hasAuth(ctx stack.Context, next http.Handler) http.Handler {
 		// Check if it's a registered token.
 		if cookie != nil {
 			token := cookie.Value
-			if token != "" && validateSessionToken(ctx["room"].(*Room), token) {
-				ctx["token"] = token
+			if token != "" && validateSessionToken(ctx.Get("room").(*Room), token) {
+				ctx.Put("token", token)
 				valid = true
 			}
 		}
