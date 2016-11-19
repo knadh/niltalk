@@ -272,7 +272,10 @@ func (room *Room) setExpiry(seconds int) {
 func (peer *Peer) listen() {
 	defer func() {
 		if _, exists := rooms[peer.room_id]; exists {
-			rooms[peer.room_id].unregister <- peer
+			select {
+			case rooms[peer.room_id].unregister <- peer:
+			default:
+			}
 		}
 		peer.ws.Close()
 	}()
