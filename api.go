@@ -21,6 +21,9 @@ import (
 // HTML page templates.
 var templates = make(map[string]*template.Template)
 
+// Initialize used_rooms (number of rooms existing)
+var used_rooms int = 0
+
 // HTTP handlers and endpoints.
 
 // Homepage.
@@ -76,6 +79,12 @@ func createRoom(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Confirm max_rooms not already reached
+	if used_rooms >= max_rooms{
+		respondJSON(w, "Max amount of rooms reached on server", nil, http.StatusBadRequest)
+		return
+	}
+
 	// Create the room.
 	room_id, err := generateRoomId(5)
 
@@ -94,6 +103,9 @@ func createRoom(w http.ResponseWriter, r *http.Request) {
 		Id string `json:"id"`
 	}{room_id}
 
+	//increment number of in use rooms
+	used_rooms ++
+
 	respondJSON(w, "", response, http.StatusOK)
 }
 
@@ -107,6 +119,9 @@ func disposeRoom(ctx *stack.Context, w http.ResponseWriter, r *http.Request) {
 	response := struct {
 		Message string `json:"message"`
 	}{"Room disposed"}
+
+	//Decrement number of in use rooms
+	used_rooms --
 
 	respondJSON(w, "", response, http.StatusOK)
 }
