@@ -1,7 +1,7 @@
 {
 	// websocket server
 	"address": "0.0.0.0:9000",
-	"url": "http://localhost:9000", // no trailing slash
+	"url": "http://localhost:9000", // no trailing slash. Is required to be set to the hostname as the *client* sees it.
 	"websocket_route": "/w/",
 	"room_route": "/r/",
 
@@ -31,7 +31,7 @@
 	"rate_limit_interval": 10,
 	"rate_limit_messages": 20,
 
-	"max_rooms": 1000,
+	"max_rooms": 1024,	// maximum number of simultaneous chat rooms
 	"max_peers_per_room": 10,
 	"room_timeout": 600, // period of inactivity after which a room will be auto-disposed
 	"room_age": 7200, // how long will the room id persist in the db before first use?

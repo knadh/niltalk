@@ -80,7 +80,7 @@ func createRoom(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Confirm max_rooms not already reached
-	if used_rooms >= max_rooms{
+	if used_rooms >= config.MaxRooms{
 		respondJSON(w, "Max amount of rooms reached on server", nil, http.StatusBadRequest)
 		return
 	}
