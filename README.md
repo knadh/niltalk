@@ -1,5 +1,6 @@
+> **IMPORTANT** This project has several bugs and is no longer maintained. It is not fit for production use.
+
 # Niltalk
-http://niltalk.com
 
 April 2015; License: AGPL3
 
