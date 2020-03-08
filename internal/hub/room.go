@@ -8,18 +8,18 @@ import (
 	"github.com/gorilla/websocket"
 )
 
-type msgWrap struct {
+type payloadMsgWrap struct {
 	Type      string      `json:"type"`
 	Timestamp time.Time   `json:"timestamp"`
 	Data      interface{} `json:"data"`
 }
 
-type msgPeer struct {
+type payloadMsgPeer struct {
 	ID     string `json:"id"`
 	Handle string `json:"handle"`
 }
 
-type msgChat struct {
+type payloadMsgChat struct {
 	PeerID     string `json:"peer_id"`
 	PeerHandle string `json:"peer_handle"`
 	Msg        string `json:"message"`
@@ -55,22 +55,22 @@ type Room struct {
 	disposeSig chan bool
 	closed     bool
 
-	// Counter for auto generated peer handles.
-	counter int
+	// Message / payload cache.
+	payloadCache [][]byte
 }
 
 // NewRoom returns a new instance of Room.
 func NewRoom(id, name string, password []byte, h *Hub) *Room {
 	return &Room{
-		ID:         id,
-		Name:       name,
-		Password:   password,
-		hub:        h,
-		peers:      make(map[*Peer]bool, 100),
-		broadcastQ: make(chan []byte, 100),
-		peerQ:      make(chan peerReq, 100),
-		disposeSig: make(chan bool),
-		counter:    1,
+		ID:           id,
+		Name:         name,
+		Password:     password,
+		hub:          h,
+		peers:        make(map[*Peer]bool, 100),
+		broadcastQ:   make(chan []byte, 100),
+		peerQ:        make(chan peerReq, 100),
+		disposeSig:   make(chan bool),
+		payloadCache: make([][]byte, 0, h.cfg.MaxCachedMessages),
 	}
 }
 
@@ -88,6 +88,7 @@ func (r *Room) Dispose() {
 
 // Broadcast broadcasts a message to all connected peers.
 func (r *Room) Broadcast(data []byte) {
+	r.recordMsgPayload(data)
 	r.broadcastQ <- data
 
 	// Extend the room's expiry.
@@ -130,6 +131,13 @@ loop:
 
 				// Send the peer its info.
 				req.peer.SendData(r.makePeerUpdatePayload(req.peer, TypePeerInfo))
+
+				// Send the peer last N message.
+				if r.hub.cfg.MaxCachedMessages > 0 {
+					for _, b := range r.payloadCache {
+						req.peer.SendData(b)
+					}
+				}
 
 				// Notify all peers of the new addition.
 				r.Broadcast(r.makePeerUpdatePayload(req.peer, TypePeerJoin))
@@ -183,6 +191,21 @@ func (r *Room) remove() {
 	r.hub.removeRoom(r.ID)
 }
 
+// recordMsgPayload records message payloads (events) sent out. It maintains last
+// N messages to be sent to new users when they join.
+func (r *Room) recordMsgPayload(b []byte) {
+	if r.hub.cfg.MaxCachedMessages == 0 {
+		return
+	}
+
+	n := len(r.payloadCache)
+	if n >= r.hub.cfg.MaxCachedMessages {
+		r.payloadCache = r.payloadCache[1:]
+	}
+
+	r.payloadCache = append(r.payloadCache, b)
+}
+
 // queuePeerReq queues a peer addition / removal request to the room.
 func (r *Room) queuePeerReq(reqType string, p *Peer) {
 	if r.closed {
@@ -208,9 +231,9 @@ func (r *Room) sendPeerList(p *Peer) {
 
 // makePeerListPayload prepares a message payload with the list of peers.
 func (r *Room) makePeerListPayload() []byte {
-	peers := make([]msgPeer, 0, len(r.peers))
+	peers := make([]payloadMsgPeer, 0, len(r.peers))
 	for p := range r.peers {
-		peers = append(peers, msgPeer{ID: p.ID, Handle: p.Handle})
+		peers = append(peers, payloadMsgPeer{ID: p.ID, Handle: p.Handle})
 	}
 	return r.makePayload(peers, TypePeerList)
 }
@@ -218,7 +241,7 @@ func (r *Room) makePeerListPayload() []byte {
 // makePeerUpdatePayload prepares a message payload representing a peer
 // join / leave event.
 func (r *Room) makePeerUpdatePayload(p *Peer, peerUpdateType string) []byte {
-	d := msgPeer{
+	d := payloadMsgPeer{
 		ID:     p.ID,
 		Handle: p.Handle,
 	}
@@ -227,7 +250,7 @@ func (r *Room) makePeerUpdatePayload(p *Peer, peerUpdateType string) []byte {
 
 // makeMessagePayload prepares a chat message.
 func (r *Room) makeMessagePayload(msg string, p *Peer) []byte {
-	d := msgChat{
+	d := payloadMsgChat{
 		PeerID:     p.ID,
 		PeerHandle: p.Handle,
 		Msg:        msg,
@@ -237,7 +260,7 @@ func (r *Room) makeMessagePayload(msg string, p *Peer) []byte {
 
 // makePayload prepares a message payload.
 func (r *Room) makePayload(data interface{}, typ string) []byte {
-	m := msgWrap{
+	m := payloadMsgWrap{
 		Timestamp: time.Now(),
 		Type:      typ,
 		Data:      data,

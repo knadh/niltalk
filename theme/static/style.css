@@ -273,6 +273,7 @@ form .help {
 
 /* Peer list sidebar */
 .chat .sidebar {
+  background: #fff;
   width: 25%;
 }
 .chat .peers {
@@ -349,7 +350,6 @@ form .help {
   }
   .chat .sidebar {
     width: 25%;
-    background: #fafafa;
     position: fixed;
     top: 0;
     right: 0;

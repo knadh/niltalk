@@ -105,7 +105,7 @@ func (p *Peer) writeWSControl(control int, payload []byte) error {
 
 // processMessage processes incoming messages from peers.
 func (p *Peer) processMessage(b []byte) {
-	var m msgWrap
+	var m payloadMsgWrap
 
 	if err := json.Unmarshal(b, &m); err != nil {
 		// TODO: Respond
