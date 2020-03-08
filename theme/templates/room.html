@@ -1,0 +1,106 @@
+{{ define "room" }}
+{{ template "header" . }}
+
+<!-- Login form. -->
+<form v-if="!chatOn && !disposed" v-on:submit.prevent="handleLogin" method="post" autocomplete="off" class="form-login">
+	<fieldset>
+		<h1>
+			{{ if .Data.Room.Name }}
+			{{ .Data.Room.Name }} (#{{ .Data.Room.ID }})
+			{{ else }}
+			#{{ .Data.Room.ID }}
+			{{ end }}
+		</h1>
+		<h3>Join room</h3>
+		<p>
+			<input :autofocus="'autofocus'" v-model="password" ref="form-password" type="password" name="password" placeholder="Password"
+				required minlength="6" maxlength="100" autocomplete="off" />
+		</p>
+		<p>
+			<input v-model="handle" type="text" name="handle" placeholder="Nick name (optional)" pattern=".{3,30}"
+				maxlength="30" autocomplete="off" />
+			<span class="help">3 to 30 characters</span>
+		</p>
+		<p>
+			<input type="submit" class="button" value="Login" />
+		</p>
+	</fieldset>
+	<expand-link link="{{ .Config.RootURL }}/r/{{ .Data.Room.ID }}"></expand-link>
+</form>
+
+<!-- Chat area. -->
+<section v-if="chatOn">
+	<section class="chat">
+		<span class="sidebar-handle" v-on:click.prevent="toggleSidebar">👥<sup>{( peers.length )}</sup></span>
+		<div class="messages" ref="messages">
+			<ul class="no peers">
+				<li v-for="m in messages" class="message">
+					<div class="wrap" v-if="m.type === Client.MsgType.Message">
+						<div class="meta">
+							<span class="peer">
+								<span class="avatar" :style="{'background-color': m.peer.avatar}"></span>
+								<span class="handle">{( m.peer.handle )}</span>
+							</span>
+							<span class="timestamp" :title="m.timestamp">{( formatDate(m.timestamp) )}</span>
+						</div>
+						<div class="content" v-html="formatMessage(m.message)"></div>
+					</div>
+					<div class="wrap notice" v-else>
+						<span class="timestamp" :title="m.timestamp">{( formatDate(m.timestamp) )}</span>
+						&mdash; {( m.handle )} {(m.type === Client.MsgType.PeerJoin ? "joined" : "left")}
+					</div>
+				</li>
+			</ul>
+		</div>
+		<div v-if="sidebarOn" class="sidebar">
+			<h2 class="title">
+				<span v-if="peers.length > 1">{( peers.length )} peers</span>
+				<span v-else>Just you</span>
+			</h2>
+			<ul class="no peers">
+				<li v-for="p in peers">
+					<span class="peer">
+						<span class="avatar" :style="{'background-color': p.avatar}"></span>
+						<span class="handle">{( p.handle )}
+							{( p.id === self.id ? "*" : "" )}</span>
+					</span>
+				</li>
+			</ul>
+		</div>
+	</section>
+	<form v-on:submit.prevent="handleSendMessage" method="post" class="form-chat">
+		<div class="container">
+			<fieldset>
+				<textarea ref="form-message" v-on:keydown="handleEnter" v-model="message" :autofocus="'autofocus'"
+					placeholder="Message" class="charlimited" maxlength="{{ .Config.MaxMessageLen }}"></textarea>
+				<div class="controls">
+					<button type="submit" class="button">Send</button>
+					<button v-on:click.prevent="handleDisposeRoom" class="btn-dispose">Dispose &times;</button>
+					<!-- <div class="sounds">
+							<input v-model="hasSound" type="checkbox" checked="true" id="chk-sounds" />
+							<label for="chk-sounds"></label>
+						</div> -->
+				</div>
+			</fieldset>
+		</div>
+		<!-- <div class="row">
+				<div class="room-url">
+					<a href="#" data-value="{{ .Config.RootURL }}/r/{{ .Data.Room.ID }}">&#9741;</a>
+				</div>
+			</div> -->
+	</form>
+</section>
+
+<div v-if="disposed">
+	<h1>Room diposed</h1>
+	<p>
+		The room was disposed of and is now unavailable. <a href="/">Create a new room</a>.
+	</p>
+</div>
+
+<!-- <div class="reconnect">
+		<h1>Disconnected.</h1>
+	</div> -->
+
+{{ template "footer" . }}
+{{end}}

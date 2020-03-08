@@ -1,0 +1,377 @@
+@font-face {
+  font-family: "Inter";
+  font-display: auto;
+  font-style: normal;
+  font-weight: 400;
+  src: url("https://rsms.me/inter/font-files/Inter-Regular.woff2")
+      format("woff2"),
+    url("https://rsms.me/inter/font-files/Inter-Regular.woff") format("woff");
+}
+
+@font-face {
+  font-family: "Inter";
+  font-display: auto;
+  font-style: normal;
+  font-weight: 500;
+  src: url("https://rsms.me/inter/font-files/Inter-Medium.woff2")
+      format("woff2"),
+    url("https://rsms.me/inter/font-files/Inter-Medium.woff") format("woff");
+}
+
+[v-cloak] {
+  display: none;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: "Inter", "Helvetica Neue", "Segoe UI", sans-serif;
+  font-weight: 400;
+  font-size: 18px;
+  line-height: 30px;
+  color: #222;
+}
+
+/* Base styles */
+h1,
+h2,
+h3,
+h4,
+h5 {
+  font-weight: 500;
+}
+h1 {
+  font-size: 2em;
+  line-height: 1.2em;
+  margin: 0 0 30px 0;
+}
+h2,
+h3 {
+  margin: 0 0 15px 0;
+}
+fieldset {
+  margin: 0 0 15px 0;
+  padding: 0;
+  border: 0;
+}
+fieldset p {
+  margin: 15px 0 30px 0;
+}
+a {
+  text-decoration: none;
+  color: #f74600;
+}
+a:hover {
+  color: #333;
+}
+
+ul.no {
+  list-style-type: none;
+  margin: 0 0 15px 0;
+  padding: 0;
+}
+
+input,
+textarea {
+  font-family: "Inter", "Helvetica Neue", "Segoe UI", sans-serif;
+  font-size: 1.5em;
+  color: #222;
+
+  border-radius: 3px;
+  border: 1px solid #ddd;
+  box-shadow: 2px 2px 0px #ddd;
+  padding: 10px 15px;
+}
+input:focus {
+  border-color: #aaa;
+  box-shadow: 2px 2px 0px #aaa;
+}
+
+/* Helpers */
+button,
+.button {
+  background: #f74600;
+  font-size: 1.5em;
+  color: #fff;
+
+  border-radius: 3px;
+  border: 1px solid #f74600;
+  padding: 10px 30px;
+  box-shadow: none;
+  cursor: pointer;
+}
+button:hover,
+.button:hover,
+button:focus,
+.button:focus {
+  border-color: #222;
+  background: #222;
+  color: #fff;
+  box-shadow: none;
+}
+button:disabled,
+.button:disabled {
+  cursor: wait;
+  background: #aaa;
+}
+
+@keyframes fadein {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 0.8;
+  }
+}
+
+.notification {
+  background: #eee;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  padding: 10px 15px;
+  opacity: 0.7;
+  animation: fadein 300ms;
+
+  text-transform: capitalize;
+  text-align: center;
+  font-weight: bold;
+}
+.notification.error {
+  background: #f00;
+  color: #fff;
+}
+.notification.notice {
+  background: #fffac6;
+}
+
+form .charlimited-container {
+  position: relative;
+}
+form .charlimited {
+  padding-bottom: 25px;
+}
+form .charlimit-counter {
+  font-size: 0.6em;
+  text-align: right;
+  position: absolute;
+  padding: 1px 6px;
+  bottom: 5px;
+  right: 40px;
+  color: #999;
+}
+form .help {
+  display: block;
+  font-size: 0.75em;
+  color: #bbb;
+}
+
+/* Expand link component */
+.expand-link {
+  display: inline-block;
+}
+.expand-link input {
+  padding: 3px;
+  border-width: 0 0 1px 0;
+  box-shadow: none;
+  font-size: 1em;
+}
+
+/* Layout */
+#app {
+  min-height: 400px;
+}
+.container {
+  min-width: 320px;
+  max-width: 900px;
+  margin: 0 auto;
+}
+.header {
+  margin: 30px 0 30px 0;
+}
+.header .logo img {
+  width: auto;
+  max-height: 28px;
+}
+.intro {
+  text-align: center;
+  margin-bottom: 90px;
+}
+.intro .splash {
+  margin: 60px;
+}
+.faq .entry {
+  margin-bottom: 60px;
+}
+
+.footer {
+  margin: 30px 0 30px 0;
+  font-size: 0.8em;
+  text-align: center;
+}
+.footer a {
+  color: #aaa;
+  margin: 0 15px;
+}
+.footer a:hover {
+  color: inherit;
+}
+
+/* Chat */
+.chat {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+}
+.chat .messages {
+  width: 70%;
+  height: 70vh;
+  overflow-y: auto;
+  padding-right: 15px;
+}
+.chat .messages .message {
+  border-bottom: 1px solid #eee;
+  padding: 15px 0;
+}
+.chat .messages .message:hover {
+  background: #fafafa;
+}
+.chat .messages .notice {
+  color: #999;
+  text-align: center;
+}
+.chat .messages,
+.form-chat textarea {
+  font-size: 0.875em;
+  line-height: 1.5em;
+}
+
+.chat .sidebar-handle {
+  display: inline-block;
+  background: #eee;
+  border-radius: 100%;
+  width: 32px;
+  text-align: center;
+
+  position: fixed;
+  top: 15px;
+  right: 15px;
+  z-index: 100;
+  display: none;
+  cursor: pointer;
+}
+
+/* Peer list sidebar */
+.chat .sidebar {
+  width: 25%;
+}
+.chat .peers {
+  max-height: 95%;
+  overflow-y: auto;
+}
+.chat .meta {
+  display: flex;
+  flex-wrap: wrap;
+  margin-bottom: 5px;
+}
+.chat .meta .peer {
+  flex: 20%;
+}
+.chat .meta .timestamp {
+  flex: 20%;
+  text-align: right;
+  color: #999;
+}
+.peer .peer {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+
+  margin-bottom: 10px;
+}
+.peer .self .handle:after {
+  content: " *";
+}
+.peer .avatar {
+  display: inline-block;
+  width: 15px;
+  height: 15px;
+  border-radius: 100%;
+}
+
+.form-chat {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+}
+.form-chat fieldset {
+  position: relative;
+  margin: 0;
+}
+.form-chat textarea {
+  padding-bottom: 60px;
+  width: 100%;
+}
+.form-chat .controls {
+  position: absolute;
+  left: 15px;
+  bottom: 15px;
+  right: 15px;
+}
+.form-chat .controls .button,
+.form-chat .controls button {
+  font-size: 1em;
+  padding: 5px 30px;
+}
+.form-chat .controls .btn-dispose {
+  float: right;
+}
+
+@media screen and (max-width: 990px) {
+  body {
+    padding: 0 15px;
+  }
+
+  .chat .messages {
+    width: 100%;
+  }
+  .chat .sidebar {
+    width: 25%;
+    background: #fafafa;
+    position: fixed;
+    top: 0;
+    right: 0;
+    height: 84vh;
+    width: 80%;
+    box-shadow: -3px 0 3px #eee;
+    padding: 30px;
+  }
+  .chat .sidebar-handle {
+    display: block;
+  }
+  .form-chat textarea {
+    border: 0;
+    box-shadow: none;
+    border-top: 1px solid #ddd;
+  }
+}
+
+@media screen and (max-width: 500px) {
+  .header {
+    margin: 15px 0;
+  }
+  input,
+  textarea {
+    width: 100%;
+  }
+}

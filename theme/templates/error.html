@@ -1,0 +1,10 @@
+{{ define "error" }}
+	{{ template "header" }}
+	<div id="error" class="compact">
+		<h1>{{.ErrorTitle}}</h1>
+		{{if .ErrorDescription}}
+		{{.ErrorDescription}}
+		{{end}}
+	</div>
+	{{ template "footer" }}
+{{ end }}

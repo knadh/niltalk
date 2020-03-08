@@ -1,0 +1,11 @@
+{{ define "room-not-found" }}
+	{{ template "header" . }}
+	<div id="error" class="compact">
+        <h1>Room not found</h1>
+        <p>
+            That room was not found. It may have been deleted or may have expired.
+            <a href="/">Create a new room</a>.
+        </p>
+	</div>
+	{{ template "footer" . }}
+{{ end }}

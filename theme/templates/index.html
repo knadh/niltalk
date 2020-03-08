@@ -1,0 +1,51 @@
+{{define "index"}}
+{{ template "header" . }}
+	<section class="intro">
+		<div class="splash">
+			<img src="/theme/static/images/chat.png" alt="" />
+		</div>
+
+		<div class="create">
+			<h1>Instant disposable chat rooms</h1>
+			<form v-on:submit.prevent="handleCreateRoom" method="post">
+				<fieldset :disabled="isBusy">
+					<p>
+						<input v-model="password" :autofocus="'autofocus'" name="password" type="password"
+							placeholder="Password" required minlength="6" maxlength="100" />
+					</p>
+					<p>
+						<input v-model="roomName" name="name" type="text"
+							placeholder="Room name (optional)" minlength="3" maxlength="100" />
+					</p>
+					<p>
+						<input type="submit" class="button" value="Create room" />
+					</p>
+				</fieldset>
+			</form>
+		</div>
+	</section>
+
+	<article class="faq">
+		<h2>How does it work?</h2>
+		<div class="entry">
+			<p>Create instant, password protected chat rooms without the
+			need to signup. Simply click the "Create" button, and share the unique chat URL with your peers.</p>
+
+			<p>
+				A room has a lifetime of {{ .Config.RoomAge }} before the first login.
+				Up to {{ .Config.MaxPeersPerRoom }} peers can join a room.
+				Rooms are automatically deleted after {{ .Config.RoomTimeout }} of inactivity (no messages exchanged).</p>
+			<p>
+				While in a room, any of the peers can dispose of the room with the click of a button.
+			</p>
+		</div>
+		<div class="entry">
+			<h2>Why can any connected peer dispose of a room?</h2>
+			<p>Niltalk is meant for holding short private conversations between groups of people who have mutually
+			agreed to converse. There is no concept of ownership of a room, and introducing ownership complicates
+			the otherwise simple privacy feature of instant disposal by any participant. This also means that Niltalk
+			isn't really meant for starting conversations by opening up a room to a large number of uninvited participants.</p>
+		</div>
+	</article>
+{{ template "footer" . }}
+{{ end }}
