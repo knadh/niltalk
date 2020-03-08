@@ -31,7 +31,10 @@
 <!-- Chat area. -->
 <section v-if="chatOn">
 	<section class="chat">
-		<span class="sidebar-handle" v-on:click.prevent="toggleSidebar">👥<sup>{( peers.length )}</sup></span>
+		<span class="sidebar-handle" v-on:click.prevent="toggleSidebar">
+			{( sidebarOn ? "&rarr;" : "&larr;" )}
+			<span class="icon">👥<sup>{( peers.length )}</sup></span>
+		</span>
 		<div class="messages" ref="messages">
 			<ul class="no peers">
 				<li v-for="m in messages" class="message">

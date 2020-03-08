@@ -302,17 +302,19 @@ form .help {
 
 .chat .sidebar-handle {
   display: inline-block;
-  background: #eee;
-  border-radius: 100%;
-  width: 32px;
-  text-align: center;
-
   position: fixed;
   top: 15px;
   right: 15px;
   z-index: 100;
   display: none;
   cursor: pointer;
+}
+.chat .sidebar-handle .icon {
+  display: inline-block;
+  background: #eee;
+  border-radius: 100%;
+  width: 32px;
+  text-align: center;
 }
 
 /* Peer list sidebar */
@@ -407,9 +409,10 @@ form .help {
     top: 0;
     right: 0;
     height: 84vh;
-    width: 80%;
+    width: 90%;
     box-shadow: -3px 0 3px #eee;
     padding: 30px;
+    opacity: 0.9;
   }
   .chat .sidebar-handle {
     display: block;
@@ -428,61 +431,5 @@ form .help {
   input,
   textarea {
     width: 100%;
-  }
-}
-
-.lds-ellipsis {
-  display: inline-block;
-  position: relative;
-  width: 80px;
-  height: 80px;
-}
-.lds-ellipsis span {
-  position: absolute;
-  top: 33px;
-  width: 13px;
-  height: 13px;
-  border-radius: 50%;
-  background: #fff;
-  animation-timing-function: cubic-bezier(0, 1, 1, 0);
-}
-.lds-ellipsis span:nth-child(1) {
-  left: 8px;
-  animation: lds-ellipsis1 0.6s infinite;
-}
-.lds-ellipsis span:nth-child(2) {
-  left: 8px;
-  animation: lds-ellipsis2 0.6s infinite;
-}
-.lds-ellipsis span:nth-child(3) {
-  left: 32px;
-  animation: lds-ellipsis2 0.6s infinite;
-}
-.lds-ellipsis span:nth-child(4) {
-  left: 56px;
-  animation: lds-ellipsis3 0.6s infinite;
-}
-@keyframes lds-ellipsis1 {
-  0% {
-    transform: scale(0);
-  }
-  100% {
-    transform: scale(1);
-  }
-}
-@keyframes lds-ellipsis3 {
-  0% {
-    transform: scale(1);
-  }
-  100% {
-    transform: scale(0);
-  }
-}
-@keyframes lds-ellipsis2 {
-  0% {
-    transform: translate(0, 0);
-  }
-  100% {
-    transform: translate(24px, 0);
   }
 }
