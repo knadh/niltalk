@@ -2,6 +2,7 @@ var Client = new function () {
 	const MsgType = {
 		"Connect": "connect",
 		"Disconnect": "disconnect",
+		"Reconnecting": "reconnecting",
 		"DisposeRoom": "room.dispose",
 		"Message": "message",
 		"Typing": "typing",
@@ -17,7 +18,7 @@ var Client = new function () {
 
 	var wsURL = null,
 		pingInterval = 5, // seconds
-		reconnectInterval = 6;
+		reconnectInterval = 4000;
 
 	var ws = null,
 		// event hooks
@@ -66,6 +67,7 @@ var Client = new function () {
 				trigger(Client.MsgType.Dispose, [e.reason]);
 			} else if (e.code != 1005) {
 				trigger(Client.MsgType.Disconnect);
+				attemptReconnection();
 			}
 		};
 	};
@@ -116,10 +118,11 @@ var Client = new function () {
 	}
 
 	function attemptReconnection() {
-		trigger("reconnecting", [reconnectInterval]);
+		trigger(Client.MsgType.Reconnecting, reconnectInterval);
 		reconnect_timer = setTimeout(function () {
+			reconnect_timer = null;
 			self.connect();
-		}, reconnectInterval * 1000);
+		}, reconnectInterval);
 	}
 
 	var self = this;

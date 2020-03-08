@@ -185,6 +185,7 @@ button:disabled,
   padding: 10px 15px;
   opacity: 0.7;
   animation: fadein 300ms;
+  z-index: 1000;
 
   text-transform: capitalize;
   text-align: center;

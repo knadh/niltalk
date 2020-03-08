@@ -168,12 +168,12 @@ var app = new Vue({
         },
 
         // Flash notification.
-        notify(msg, typ) {
+        notify(msg, typ, timeout) {
             clearTimeout(this.notifTimer);
             this.notifTimer = setTimeout(function () {
                 this.notifMessage = "";
                 this.notifType = "";
-            }.bind(this), 3000);
+            }.bind(this), timeout ? timeout : 3000);
 
             this.notifMessage = msg;
             if (typ) {
@@ -258,8 +258,12 @@ var app = new Vue({
         },
 
         onDisconnect() {
-            this.notify("Disconnected", notifType.notice);
-            window.location.reload();
+            this.notify("Disconnected. Retrying ...", notifType.notice);
+            // window.location.reload();
+        },
+
+        onReconnecting(timeout) {
+            this.notify("Disconnected. Retrying ...", notifType.notice, timeout);
         },
 
         onPeerSelf(data) {
@@ -357,6 +361,7 @@ var app = new Vue({
             // On connect, send a request to get the peers list.
             Client.on(Client.MsgType.Connect, this.onConnect);
             Client.on(Client.MsgType.Disconnect, this.onDisconnect);
+            Client.on(Client.MsgType.Reconnecting, this.onReconnecting);
             Client.on(Client.MsgType.PeerInfo, this.onPeerSelf);
             Client.on(Client.MsgType.PeerList, (data) => { this.onPeers(data.data); });
             Client.on(Client.MsgType.PeerJoin, (data) => { this.onPeerJoinLeave(data, Client.MsgType.PeerJoin); });
