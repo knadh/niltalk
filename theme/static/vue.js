@@ -3,6 +3,7 @@ const notifType = {
     notice: "notice",
     error: "error"
 };
+const typingDebounceInterval = 3000;
 
 Vue.component("expand-link", {
     props: ["link"],
@@ -33,12 +34,20 @@ var app = new Vue({
         sidebarOn: true,
         disposed: false,
         hasSound: true,
+
+        // Global flash / notifcation properties.
         notifTimer: null,
         notifMessage: "",
         notifType: "",
+
+        // New activity animation in title bar. Page title is cached on load
+        // to use in the animation.
         newActivity: false,
         newActivityCounter: 0,
         pageTitle: document.title,
+
+        typingTimer: null,
+        typingPeers: new Map(),
 
         // Form fields.
         roomName: "",
@@ -53,23 +62,7 @@ var app = new Vue({
     },
     created: function () {
         this.initClient();
-
-        // Title bar "new activity" animation.
-        window.setInterval(() => {
-            if(!this.newActivity) {
-                return;
-            }
-            if(this.newActivityCounter % 2 === 0) {
-                document.title = "[•] " + this.pageTitle;
-            } else {
-                document.title = this.pageTitle;
-            }
-            this.newActivityCounter++;
-        }, 2500);
-		window.onfocus = () => {
-			this.newActivity = false;
-			document.title = this.pageTitle;
-		};
+        this.initTimers();
     },
     computed: {
         Client() {
@@ -133,17 +126,38 @@ var app = new Vue({
                 });
         },
 
-        // Send message.
-        handleEnter(e) {
+        // Capture keypresses to send message on Enter key and to broadcast
+        // "typing" statuses.
+        handleChatKeyPress(e) {
             if (e.keyCode == 13 && !e.shiftKey) {
                 e.preventDefault();
                 this.handleSendMessage();
+                return;
             }
+
+            // If it's a non "text" key, ignore.
+            if (!String.fromCharCode(e.keyCode).match(/(\w|\s)/g)) {
+                return;
+            }
+
+            // Debounce and wait for N seconds before sending a typing status.
+            if (this.typingTimer) {
+                return;
+            }
+
+            // Send the 'typing' status.
+            Client.sendMessage(Client.MsgType.Typing);
+
+            this.typingTimer = window.setTimeout(() => {
+                this.typingTimer = null;
+            }, typingDebounceInterval);
         },
 
         handleSendMessage() {
             Client.sendMessage(Client.MsgType.Message, this.message);
             this.message = "";
+            window.clearTimeout(this.typingTimer);
+            this.typingTimer = null;
         },
 
         handleDisposeRoom() {
@@ -295,14 +309,23 @@ var app = new Vue({
             this.peers = peers;
         },
 
+        onTyping(data) {
+            if (data.data.id === this.self.id) {
+                return;
+            }
+            this.typingPeers.set(data.data.id, { ...data.data, time: Date.now() });
+            this.$forceUpdate();
+        },
+
         onMessage(data) {
             // If the window isn't in focus, start the "new activity" animation
             // in the title bar.
-            if(!document.hasFocus()) {
+            if (!document.hasFocus()) {
                 this.newActivity = true;
                 this.beep();
             }
 
+            this.typingPeers.delete(data.data.peer_id);
             this.messages.push({
                 type: Client.MsgType.Message,
                 timestamp: data.timestamp,
@@ -315,7 +338,6 @@ var app = new Vue({
             });
             this.$nextTick().then(function () {
                 this.$refs["messages"].scrollTop = this.$refs["messages"].scrollHeight;
-                console.log("scroll")
             }.bind(this));
         },
 
@@ -341,7 +363,41 @@ var app = new Vue({
             Client.on(Client.MsgType.PeerLeave, (data) => { this.onPeerJoinLeave(data, Client.MsgType.PeerLeave); });
             Client.on(Client.MsgType.PeerRateLimited, this.onRateLimited);
             Client.on(Client.MsgType.Message, this.onMessage);
+            Client.on(Client.MsgType.Typing, this.onTyping);
             Client.on(Client.MsgType.Dispose, this.onDispose);
+        },
+
+        initTimers() {
+            // Title bar "new activity" animation.
+            window.setInterval(() => {
+                if (!this.newActivity) {
+                    return;
+                }
+                if (this.newActivityCounter % 2 === 0) {
+                    document.title = "[•] " + this.pageTitle;
+                } else {
+                    document.title = this.pageTitle;
+                }
+                this.newActivityCounter++;
+            }, 2500);
+            window.onfocus = () => {
+                this.newActivity = false;
+                document.title = this.pageTitle;
+            };
+
+            // Sweep "typing" statuses at regular intervals.
+            window.setInterval(() => {
+                let changed = false;
+                this.typingPeers.forEach((p) => {
+                    if ((p.time + typingDebounceInterval) < Date.now()) {
+                        this.typingPeers.delete(p.id);
+                        changed = true;
+                    }
+                });
+                if(changed) {
+                    this.$forceUpdate();
+                }
+            }, typingDebounceInterval);
         }
     }
 });

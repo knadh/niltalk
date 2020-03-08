@@ -133,7 +133,11 @@ func (p *Peer) processMessage(b []byte) {
 			// TODO: Respond
 			return
 		}
-		p.room.Broadcast(p.room.makeMessagePayload(msg, p))
+		p.room.Broadcast(p.room.makeMessagePayload(msg, p), true)
+
+	// "Typing" status.
+	case TypeTyping:
+		p.room.Broadcast(p.room.makePeerUpdatePayload(p, TypeTyping), false)
 
 	// Request for peers list
 	case TypePeerList:

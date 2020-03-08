@@ -12,6 +12,7 @@ import (
 
 // Types of messages sent to peers.
 const (
+	TypeTyping          = "typing"
 	TypeMessage         = "message"
 	TypePeerList        = "peer.list"
 	TypePeerInfo        = "peer.info"

@@ -87,9 +87,11 @@ func (r *Room) Dispose() {
 }
 
 // Broadcast broadcasts a message to all connected peers.
-func (r *Room) Broadcast(data []byte) {
-	r.recordMsgPayload(data)
+func (r *Room) Broadcast(data []byte, record bool) {
 	r.broadcastQ <- data
+	if record {
+		r.recordMsgPayload(data)
+	}
 
 	// Extend the room's expiry.
 	// if time.Since(r.timestamp) > time.Duration(30)*time.Second {
@@ -140,13 +142,13 @@ loop:
 				}
 
 				// Notify all peers of the new addition.
-				r.Broadcast(r.makePeerUpdatePayload(req.peer, TypePeerJoin))
+				r.Broadcast(r.makePeerUpdatePayload(req.peer, TypePeerJoin), true)
 				r.hub.log.Printf("%s@%s joined %s", req.peer.Handle, req.peer.ID, r.ID)
 
 			// A peer has left.
 			case TypePeerLeave:
 				r.removePeer(req.peer)
-				r.Broadcast(r.makePeerUpdatePayload(req.peer, TypePeerLeave))
+				r.Broadcast(r.makePeerUpdatePayload(req.peer, TypePeerLeave), true)
 				r.hub.log.Printf("%s@%s left %s", req.peer.Handle, req.peer.ID, r.ID)
 
 			// A peer has requested the room's peer list.
@@ -221,7 +223,7 @@ func (r *Room) removePeer(p *Peer) {
 	delete(r.peers, p)
 
 	// Notify all peers of the event.
-	r.Broadcast(r.makePeerUpdatePayload(p, TypePeerLeave))
+	r.Broadcast(r.makePeerUpdatePayload(p, TypePeerLeave), true)
 }
 
 // sendPeerList sends the peer list to the given peer.

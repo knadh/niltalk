@@ -4,6 +4,7 @@ var Client = new function () {
 		"Disconnect": "disconnect",
 		"DisposeRoom": "room.dispose",
 		"Message": "message",
+		"Typing": "typing",
 		"PeerList": "peer.list",
 		"PeerInfo": "peer.info",
 		"PeerJoin": "peer.join",

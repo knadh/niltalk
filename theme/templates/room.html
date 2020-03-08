@@ -71,7 +71,11 @@
 	<form v-on:submit.prevent="handleSendMessage" method="post" class="form-chat">
 		<div class="container">
 			<fieldset>
-				<textarea ref="form-message" v-on:keydown="handleEnter" v-model="message" :autofocus="'autofocus'"
+				<div v-if="typingPeers.size > 0" class="typing">
+					<span class="dot-spinner"><i></i><i></i><i></i><i></i></span>
+					<span class="handle" v-for="p in Array.from(typingPeers)">{( p[1].handle )}</span>
+				</div>
+				<textarea ref="form-message" v-on:keydown="handleChatKeyPress" v-model="message" :autofocus="'autofocus'"
 					placeholder="Message" class="charlimited" maxlength="{{ .Config.MaxMessageLen }}"></textarea>
 				<div class="controls">
 					<button type="submit" class="button">Send</button>
