@@ -30,7 +30,7 @@ var Client = new function () {
 	this.init = function (roomID, handle) {
 		wsURL = document.location.protocol.replace(/http(s?):/, "ws$1:") +
 			document.location.host +
-			"/ws/" + _roomID + "?handle=" + handle;
+			"/ws/" + _room.id + "?handle=" + handle;
 	};
 
 	// Peer identification info.

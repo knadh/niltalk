@@ -2,7 +2,7 @@ const linkifyExpr = /(\b(https?|ftp|file):\/\/[-A-Z0-9+&@#\/%?=~_|!:,.;]*[-A-Z0-
 const notifType = {
     notice: "notice",
     error: "error"
-}
+};
 
 Vue.component("expand-link", {
     props: ["link"],
@@ -36,6 +36,9 @@ var app = new Vue({
         notifTimer: null,
         notifMessage: "",
         notifType: "",
+        newActivity: false,
+        newActivityCounter: 0,
+        pageTitle: document.title,
 
         // Form fields.
         roomName: "",
@@ -50,6 +53,23 @@ var app = new Vue({
     },
     created: function () {
         this.initClient();
+
+        // Title bar "new activity" animation.
+        window.setInterval(() => {
+            if(!this.newActivity) {
+                return;
+            }
+            if(this.newActivityCounter % 2 === 0) {
+                document.title = "[•] " + this.pageTitle;
+            } else {
+                document.title = this.pageTitle;
+            }
+            this.newActivityCounter++;
+        }, 2500);
+		window.onfocus = () => {
+			this.newActivity = false;
+			document.title = this.pageTitle;
+		};
     },
     computed: {
         Client() {
@@ -87,7 +107,7 @@ var app = new Vue({
             const handle = this.handle.replace(/[^a-z0-9_\-\.@]/ig, "");
 
             this.notify("Logging in", notifType.notice);
-            fetch("/api/rooms/" + _roomID + "/login", {
+            fetch("/api/rooms/" + _room.id + "/login", {
                 method: "post",
                 body: JSON.stringify({ handle: handle, password: this.password }),
                 headers: { "Content-Type": "application/json; charset=utf-8" }
@@ -104,7 +124,7 @@ var app = new Vue({
                     this.clear();
                     this.deNotify();
                     this.toggleChat();
-                    Client.init(_roomID, handle);
+                    Client.init(_room.id, handle);
                     Client.connect();
                 })
                 .catch(err => {
@@ -145,6 +165,13 @@ var app = new Vue({
             if (typ) {
                 this.notifType = typ;
             }
+        },
+
+        beep() {
+            const b = document.querySelector("#beep");
+            b.pause();
+            b.load();
+            b.play();
         },
 
         deNotify() {
@@ -195,7 +222,7 @@ var app = new Vue({
                 if (!this.chatOn) {
                     this.$refs["form-password"].focus();
                     return
-                }    
+                }
                 this.$refs["form-message"].focus();
             }.bind(this));
         },
@@ -269,6 +296,13 @@ var app = new Vue({
         },
 
         onMessage(data) {
+            // If the window isn't in focus, start the "new activity" animation
+            // in the title bar.
+            if(!document.hasFocus()) {
+                this.newActivity = true;
+                this.beep();
+            }
+
             this.messages.push({
                 type: Client.MsgType.Message,
                 timestamp: data.timestamp,
@@ -281,6 +315,7 @@ var app = new Vue({
             });
             this.$nextTick().then(function () {
                 this.$refs["messages"].scrollTop = this.$refs["messages"].scrollHeight;
+                console.log("scroll")
             }.bind(this));
         },
 

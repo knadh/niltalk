@@ -12,7 +12,10 @@
 	<link href="/theme/static/style.css" rel="stylesheet" />
 	<script>
 		{{  if .Data.Room  }}
-			var _roomID = "{{ .Data.Room.ID }}";
+			const _room = {
+				id: "{{ .Data.Room.ID }}",
+				name: "{{ .Data.Room.Name }}"
+			};
 		{{  end  }}
 	</script>
 </head>

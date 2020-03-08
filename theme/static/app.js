@@ -117,7 +117,7 @@ function ready() {
 					}
 
 					// document.location.reload();
-					Client.init(_roomID, handle);
+					Client.init(_room.id, handle);
 					Client.connect();
 				})
 				.catch(err => {

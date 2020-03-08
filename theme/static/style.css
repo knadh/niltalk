@@ -184,6 +184,7 @@ form .help {
   border-width: 0 0 1px 0;
   box-shadow: none;
   font-size: 1em;
+  width: 100%;
 }
 
 /* Layout */
@@ -290,6 +291,7 @@ form .help {
   flex: 20%;
   text-align: right;
   color: #999;
+  padding-right: 15px;
 }
 .peer .peer {
   white-space: nowrap;
