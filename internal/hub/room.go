@@ -105,6 +105,7 @@ loop:
 		select {
 		// Dispose request.
 		case <-r.disposeSig:
+			r.hub.Store.ClearSessions(r.ID)
 			break loop
 
 		// Incoming peer request.

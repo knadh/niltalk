@@ -82,8 +82,9 @@ func (r *Redis) ExtendRoomTTL(id string, ttl time.Duration) error {
 	c := r.pool.Get()
 	defer c.Close()
 
-	_, err := c.Do("EXPIRE", fmt.Sprintf(r.cfg.PrefixRoom, id), int(ttl.Seconds()))
-	return err
+	c.Send("EXPIRE", fmt.Sprintf(r.cfg.PrefixRoom, id), int(ttl.Seconds()))
+	c.Send("EXPIRE", fmt.Sprintf(r.cfg.PrefixSession, id), int(ttl.Seconds()))
+	return c.Flush()
 }
 
 // GetRoom gets a room from the store.
@@ -168,7 +169,7 @@ func (r *Redis) RemoveSession(sessID, roomID string) error {
 	c := r.pool.Get()
 	defer c.Close()
 
-	_, err := redis.Bool(c.Do("SDEL", fmt.Sprintf(r.cfg.PrefixRoom, roomID), sessID))
+	_, err := redis.Bool(c.Do("SDEL", fmt.Sprintf(r.cfg.PrefixSession, roomID), sessID))
 	return err
 }
 
@@ -177,6 +178,6 @@ func (r *Redis) ClearSessions(roomID string) error {
 	c := r.pool.Get()
 	defer c.Close()
 
-	_, err := redis.Bool(c.Do("DEL", fmt.Sprintf(r.cfg.PrefixRoom, roomID)))
+	_, err := redis.Bool(c.Do("DEL", fmt.Sprintf(r.cfg.PrefixSession, roomID)))
 	return err
 }
