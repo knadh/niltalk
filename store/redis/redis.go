@@ -142,26 +142,30 @@ func (r *Redis) RemoveRoom(id string) error {
 }
 
 // AddSession adds a sessionID room to the store.
-func (r *Redis) AddSession(sessID, roomID string, ttl time.Duration) error {
+func (r *Redis) AddSession(sessID, handle, roomID string, ttl time.Duration) error {
 	c := r.pool.Get()
 	defer c.Close()
 
 	key := fmt.Sprintf(r.cfg.PrefixSession, roomID)
-	c.Send("SADD", key, sessID)
+	c.Send("HMSET", key, sessID, handle)
 	c.Send("EXPIRE", key, ttl.Seconds)
 	return c.Flush()
 }
 
-// SessionExists adds a sessionID room to the store.
-func (r *Redis) SessionExists(sessID, roomID string) (bool, error) {
+// GetSession retrieves a peer session from th store.
+func (r *Redis) GetSession(sessID, roomID string) (store.Sess, error) {
 	c := r.pool.Get()
 	defer c.Close()
 
-	ok, err := redis.Bool(c.Do("SISMEMBER", fmt.Sprintf(r.cfg.PrefixSession, roomID), sessID))
+	h, err := redis.String(c.Do("HGET", fmt.Sprintf(r.cfg.PrefixSession, roomID), sessID))
 	if err != nil && err != redis.ErrNil {
-		return false, err
+		return store.Sess{}, err
 	}
-	return ok, err
+
+	return store.Sess{
+		ID:     sessID,
+		Handle: h,
+	}, nil
 }
 
 // RemoveSession deletes a session ID from a room.
@@ -169,7 +173,7 @@ func (r *Redis) RemoveSession(sessID, roomID string) error {
 	c := r.pool.Get()
 	defer c.Close()
 
-	_, err := redis.Bool(c.Do("SDEL", fmt.Sprintf(r.cfg.PrefixSession, roomID), sessID))
+	_, err := redis.Bool(c.Do("HDEL", fmt.Sprintf(r.cfg.PrefixSession, roomID), sessID))
 	return err
 }
 

@@ -82,7 +82,11 @@
 					placeholder="Message" class="charlimited" maxlength="{{ .Config.MaxMessageLen }}"></textarea>
 				<div class="controls">
 					<button type="submit" class="button">Send</button>
-					<button v-on:click.prevent="handleDisposeRoom" class="btn-dispose">Dispose &times;</button>
+
+					<div class="right">
+						<a href="" v-on:click.prevent="handleLogout" class="btn-dispose">Logout</a>
+						<a href="" v-on:click.prevent="handleDisposeRoom" class="btn-dispose">Dispose &times;</a>
+					</div>
 					<!-- <div class="sounds">
 							<input v-model="hasSound" type="checkbox" checked="true" id="chk-sounds" />
 							<label for="chk-sounds"></label>

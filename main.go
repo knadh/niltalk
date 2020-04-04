@@ -170,10 +170,11 @@ func main() {
 
 	// API.
 	r.Post("/api/rooms/{roomID}/login", wrap(handleLogin, app, hasRoom))
+	r.Delete("/api/rooms/{roomID}/login", wrap(handleLogout, app, hasAuth|hasRoom))
 	r.Post("/api/rooms", wrap(handleCreateRoom, app, 0))
 
 	// Views.
-	r.Get("/r/{roomID}", wrap(handleRoomPage, app, hasRoom))
+	r.Get("/r/{roomID}", wrap(handleRoomPage, app, hasAuth|hasRoom))
 	r.Get("/theme/*", func(w http.ResponseWriter, r *http.Request) {
 		app.fs.FileServer().ServeHTTP(w, r)
 	})

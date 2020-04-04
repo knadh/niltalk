@@ -63,6 +63,12 @@ var app = new Vue({
     created: function () {
         this.initClient();
         this.initTimers();
+
+        if (window.hasOwnProperty("_room") && _room.auth) {
+            this.toggleChat();
+            Client.init(_room.id);
+            Client.connect();
+        }
     },
     computed: {
         Client() {
@@ -117,7 +123,7 @@ var app = new Vue({
                     this.clear();
                     this.deNotify();
                     this.toggleChat();
-                    Client.init(_room.id, handle);
+                    Client.init(_room.id);
                     Client.connect();
                 })
                 .catch(err => {
@@ -158,6 +164,24 @@ var app = new Vue({
             this.message = "";
             window.clearTimeout(this.typingTimer);
             this.typingTimer = null;
+        },
+
+        handleLogout() {
+            if (!confirm("Logout?")) {
+                return;
+            }
+            fetch("/api/rooms/" + _room.id + "/login", {
+                method: "delete",
+                headers: { "Content-Type": "application/json; charset=utf-8" }
+            })
+                .then(resp => resp.json())
+                .then(resp => {
+                    this.toggleChat();
+                    document.location.reload();
+                })
+                .catch(err => {
+                    this.notify(err, notifType.error);
+                });
         },
 
         handleDisposeRoom() {
@@ -233,7 +257,7 @@ var app = new Vue({
             this.chatOn = !this.chatOn;
 
             this.$nextTick().then(function () {
-                if (!this.chatOn) {
+                if (!this.chatOn && this.$refs["form-password"]) {
                     this.$refs["form-password"].focus();
                     return
                 }

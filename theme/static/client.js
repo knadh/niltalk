@@ -29,10 +29,9 @@ var Client = new function () {
 
 
 	// Initialize and connect the websocket.
-	this.init = function (roomID, handle) {
+	this.init = function (roomID) {
 		wsURL = document.location.protocol.replace(/http(s?):/, "ws$1:") +
-			document.location.host +
-			"/ws/" + _room.id + "?handle=" + handle;
+			document.location.host + "/ws/" + roomID;
 	};
 
 	// Peer identification info.
@@ -84,7 +83,7 @@ var Client = new function () {
 	this.getPeers = function () {
 		send({ "type": MsgType.PeerList });
 	};
-	
+
 	// send a message
 	this.sendMessage = function (typ, data) {
 		send({ "type": typ, "data": data });
@@ -108,7 +107,7 @@ var Client = new function () {
 
 	// trigger event callbacks
 	function trigger(typ, data) {
-		if(!triggers.hasOwnProperty(typ)) {
+		if (!triggers.hasOwnProperty(typ)) {
 			return;
 		}
 

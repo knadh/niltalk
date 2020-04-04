@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"io/ioutil"
 	"net/http"
 
@@ -19,10 +18,16 @@ const (
 	hasRoom
 )
 
+type sess struct {
+	ID     string
+	Handle string
+}
+
 // reqCtx is the context injected into every request.
 type reqCtx struct {
 	app  *App
 	room *hub.Room
+	sess sess
 }
 
 // jsonResp is the envelope for all JSON API responses.
@@ -41,6 +46,7 @@ type tplData struct {
 	Title       string
 	Description string
 	Room        interface{}
+	Auth        bool
 }
 
 type reqRoom struct {
@@ -77,14 +83,19 @@ func handleRoomPage(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	out := tplData{
+		Title: room.Name,
+		Room:  room,
+	}
+	if ctx.sess.ID != "" {
+		out.Auth = true
+	}
+
 	// Disable browser caching.
 	w.Header().Set("Cache-Control", "no-cache, no-store, must-revalidate")
 	w.Header().Set("Pragma", "no-cache")
 	w.Header().Set("Expires", "0")
-	respondHTML("room", tplData{
-		Title: room.Name,
-		Room:  room,
-	}, http.StatusNotFound, w, app)
+	respondHTML("room", out, http.StatusNotFound, w, app)
 }
 
 // handleLogin authenticates a peer into a room.
@@ -120,7 +131,7 @@ func handleLogin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := app.hub.Store.AddSession(sessID, room.ID, app.cfg.RoomAge); err != nil {
+	if err := app.hub.Store.AddSession(sessID, req.Handle, room.ID, app.cfg.RoomAge); err != nil {
 		app.logger.Printf("error creating session: %v", err)
 		respondJSON(w, nil, errors.New("error creating session"), http.StatusInternalServerError)
 		return
@@ -128,6 +139,31 @@ func handleLogin(w http.ResponseWriter, r *http.Request) {
 
 	// Set the session cookie.
 	ck := &http.Cookie{Name: app.cfg.SessionCookie, Value: sessID, Path: "/"}
+	http.SetCookie(w, ck)
+	respondJSON(w, true, nil, http.StatusOK)
+}
+
+// handleLogout logs out a peer.
+func handleLogout(w http.ResponseWriter, r *http.Request) {
+	var (
+		ctx  = r.Context().Value("ctx").(*reqCtx)
+		app  = ctx.app
+		room = ctx.room
+	)
+
+	if room == nil {
+		respondJSON(w, nil, errors.New("room is invalid or has expired"), http.StatusBadRequest)
+		return
+	}
+
+	if err := app.hub.Store.RemoveSession(ctx.sess.ID, room.ID); err != nil {
+		app.logger.Printf("error removing session: %v", err)
+		respondJSON(w, nil, errors.New("error removing session"), http.StatusInternalServerError)
+		return
+	}
+
+	// Delete the session cookie.
+	ck := &http.Cookie{Name: app.cfg.SessionCookie, Value: "", MaxAge: -1, Path: "/"}
 	http.SetCookie(w, ck)
 	respondJSON(w, true, nil, http.StatusOK)
 }
@@ -140,6 +176,11 @@ func handleWS(w http.ResponseWriter, r *http.Request) {
 		room = ctx.room
 	)
 
+	if ctx.sess.ID == "" {
+		respondJSON(w, nil, errors.New("invalid session"), http.StatusBadRequest)
+		return
+	}
+
 	// Create the WS connection.
 	ws, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
@@ -147,22 +188,8 @@ func handleWS(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Generate an ID for the peer.
-	peerID, err := hub.GenerateGUID(32)
-	if err != nil {
-		app.logger.Printf("error generating peer ID: %v", err)
-		http.Error(w, "error generating peer ID", http.StatusInternalServerError)
-		return
-	}
-
-	// Assign a handle to the peer.
-	handle := r.URL.Query().Get("handle")
-	if len(handle) < 3 {
-		handle = fmt.Sprintf(app.cfg.PeerHandleFormat, peerID[:4])
-	}
-
 	// Create a new peer instance and add to the room.
-	room.AddPeer(peerID, handle, ws)
+	room.AddPeer(ctx.sess.ID, ctx.sess.Handle, ws)
 }
 
 // respondJSON responds to an HTTP request with a generic payload or an error.
@@ -260,17 +287,17 @@ func wrap(next http.HandlerFunc, app *App, opts uint8) http.HandlerFunc {
 		// Check if the request is authenticated.
 		if opts&hasAuth != 0 {
 			ck, _ := r.Cookie(app.cfg.SessionCookie)
-			if ck == nil || ck.Value == "" {
-				respondJSON(w, nil, errors.New("session is invalid or has expired"), http.StatusForbidden)
-				return
-			}
-			if ok, err := app.hub.Store.SessionExists(ck.Value, roomID); err != nil {
-				app.logger.Printf("error checking session: %v", err)
-				respondJSON(w, nil, errors.New("error checking session"), http.StatusForbidden)
-				return
-			} else if !ok {
-				respondJSON(w, nil, errors.New("session is invalid or has expired"), http.StatusForbidden)
-				return
+			if ck != nil && ck.Value != "" {
+				s, err := app.hub.Store.GetSession(ck.Value, roomID)
+				if err != nil {
+					app.logger.Printf("error checking session: %v", err)
+					respondJSON(w, nil, errors.New("error checking session"), http.StatusForbidden)
+					return
+				}
+				req.sess = sess{
+					ID:     s.ID,
+					Handle: s.Handle,
+				}
 			}
 		}
 

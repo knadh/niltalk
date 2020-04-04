@@ -13,8 +13,8 @@ type Store interface {
 	RoomExists(id string) (bool, error)
 	RemoveRoom(id string) error
 
-	AddSession(sessID, roomID string, ttl time.Duration) error
-	SessionExists(sessID, roomID string) (bool, error)
+	AddSession(sessID, handle, roomID string, ttl time.Duration) error
+	GetSession(sessID, roomID string) (Sess, error)
 	RemoveSession(roomID, sessID string) error
 	ClearSessions(roomID string) error
 }
@@ -25,6 +25,12 @@ type Room struct {
 	Name      string    `json:"name"`
 	Password  []byte    `json:"password"`
 	CreatedAt time.Time `json:"created_at"`
+}
+
+// Sess represents an authenticated peer session.
+type Sess struct {
+	ID     string `json:"id"`
+	Handle string `json:"name"`
 }
 
 // ErrRoomNotFound indicates that the requested room was not found.

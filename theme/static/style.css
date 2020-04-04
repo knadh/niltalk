@@ -392,8 +392,12 @@ form .help {
   font-size: 1em;
   padding: 5px 30px;
 }
-.form-chat .controls .btn-dispose {
+.form-chat .controls .right {
   float: right;
+}
+.form-chat .controls .right a {
+  display: inline-block;
+  margin-left: 15px;
 }
 
 @media screen and (max-width: 990px) {
@@ -403,6 +407,10 @@ form .help {
 
   .chat .messages {
     width: 100%;
+    height: 58vh;
+  }
+  .form-chat textarea {
+    height: 150px;
   }
   .chat .sidebar {
     width: 25%;

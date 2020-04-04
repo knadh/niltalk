@@ -12,9 +12,10 @@
 	<link href="/theme/static/style.css" rel="stylesheet" />
 	<script>
 		{{  if .Data.Room  }}
-			const _room = {
+			window._room = {
 				id: "{{ .Data.Room.ID }}",
-				name: "{{ .Data.Room.Name }}"
+				name: "{{ .Data.Room.Name }}",
+				auth: {{ .Data.Auth }}
 			};
 		{{  end  }}
 	</script>
