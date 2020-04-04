@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"path/filepath"
 	"strings"
 	"syscall"
 	"time"
@@ -52,8 +53,8 @@ func loadConfig() {
 	}
 	f.StringSlice("config", []string{"config.toml"},
 		"Path to one or more TOML config files to load in order")
-	f.StringSlice("prov", []string{"smtp.prov"},
-		"Path to a provider plugin. Can specify multiple values.")
+	f.Bool("new-config", false, "generate sample config file")
+	f.String("static-dir", "", "(optional) path to directory with static files")
 	f.Bool("version", false, "Show build version")
 	f.Parse(os.Args[1:])
 
@@ -85,7 +86,7 @@ func loadConfig() {
 }
 
 // initFS initializes the stuffbin embedded static filesystem.
-func initFS() stuffbin.FileSystem {
+func initFS(staticDir string) stuffbin.FileSystem {
 	// Get self executable path to initialise stuffed FS.
 	exe, err := os.Executable()
 	if err != nil {
@@ -100,12 +101,27 @@ func initFS() stuffbin.FileSystem {
 		if err == stuffbin.ErrNoID {
 			// First argument is to the root to mount the files in the FileSystem
 			// and the rest of the arguments are paths to embed.
-			fs, err = stuffbin.NewLocalFS("./", "./theme")
+			fs, err = stuffbin.NewLocalFS("./", "./static/templates", "./static/static:/static")
 			if err != nil {
 				log.Fatalf("error falling back to local filesystem: %v", err)
 			}
 		} else {
 			log.Fatalf("error reading stuffed binary: %v", err)
+		}
+	}
+
+	// Optional static directory to override files.
+	if staticDir != "" {
+		logger.Printf("loading static files from: %v", staticDir)
+		fStatic, err := stuffbin.NewLocalFS("/",
+			filepath.Join(staticDir, "/templates")+":/static/templates",
+			filepath.Join(staticDir, "/static")+":/static",
+		)
+		if err != nil {
+			logger.Fatalf("failed reading static directory: %s: %v", staticDir, err)
+		}
+		if err := fs.Merge(fStatic); err != nil {
+			logger.Fatalf("error merging static directory: %s: %v", staticDir, err)
 		}
 	}
 	return fs
@@ -133,7 +149,7 @@ func main() {
 	// Initialize global app context.
 	app := &App{
 		logger: logger,
-		fs:     initFS(),
+		fs:     initFS(ko.String("static-dir")),
 	}
 	if err := ko.Unmarshal("app", &app.cfg); err != nil {
 		logger.Fatalf("error unmarshalling 'app' config: %v", err)
@@ -157,7 +173,7 @@ func main() {
 	app.hub = hub.NewHub(app.cfg, store, logger)
 
 	// Compile static templates.
-	tpl, err := stuffbin.ParseTemplatesGlob(nil, app.fs, "/theme/templates/*.html")
+	tpl, err := stuffbin.ParseTemplatesGlob(nil, app.fs, "/static/templates/*.html")
 	if err != nil {
 		logger.Fatalf("error compiling templates: %v", err)
 	}
@@ -175,7 +191,7 @@ func main() {
 
 	// Views.
 	r.Get("/r/{roomID}", wrap(handleRoomPage, app, hasAuth|hasRoom))
-	r.Get("/theme/*", func(w http.ResponseWriter, r *http.Request) {
+	r.Get("/static/*", func(w http.ResponseWriter, r *http.Request) {
 		app.fs.FileServer().ServeHTTP(w, r)
 	})
 

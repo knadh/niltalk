@@ -61,7 +61,7 @@ function ready() {
 
 	// Message sound.
 	const beepSound = new Audio();
-	beepSound.src = "/theme/static/beep." + (beepSound.canPlayType("audio/mpeg") ? "mp3" : "ogg");
+	beepSound.src = "/static/beep." + (beepSound.canPlayType("audio/mpeg") ? "mp3" : "ogg");
 
 	initUI = () => {
 		// Create room form.

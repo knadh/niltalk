@@ -4,12 +4,12 @@ COMMIT_DATE := $(shell git show -s --format=%ci ${HASH})
 BUILD := (${HASH}) $(shell date '+%Y-%m-%d %H:%M:%S')
 
 BIN := niltalk
-THEME := theme/
+STATIC := static/templates static/static:/static
 
 .PHONY: build
 build:
 	go build -o ${BIN} -ldflags="-s -w -X 'main.buildVersion=${VER}' -X 'main.buildDate=${BUILD}'"
-	stuffbin -a stuff -in ${BIN} -out ${BIN} ${THEME}
+	stuffbin -a stuff -in ${BIN} -out ${BIN} ${STATIC}
 
 .PHONY: run
 run: build

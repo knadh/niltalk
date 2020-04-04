@@ -7,9 +7,9 @@
 	<meta name="description" content="{{ .Data.Description }}" />
 	<meta name="keywords" content="instant chat, disposable chat" />
 	<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
-	<meta property="og:image" content="/theme/static/images/thumbnail.png" />
-	<link rel="shortcut icon" href="/theme/static/images/favicon.png" type="image/x-icon" />
-	<link href="/theme/static/style.css" rel="stylesheet" />
+	<meta property="og:image" content="/static/images/thumbnail.png" />
+	<link rel="shortcut icon" href="/static/images/favicon.png" type="image/x-icon" />
+	<link href="/static/style.css" rel="stylesheet" />
 	<script>
 		{{  if .Data.Room  }}
 			window._room = {
@@ -24,7 +24,7 @@
 <div class="container">
 	<header class="header">
 		<div class="logo">
-			<a href="{{ .Config.RootURL }}"><img src="/theme/static/images/logo.png" /></a>
+			<a href="{{ .Config.RootURL }}"><img src="/static/images/logo.png" /></a>
 		</div>
 	</header>
 	<div id="app" v-cloak>
@@ -38,8 +38,8 @@
 </div><!-- container -->
 
 <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
-<script src="/theme/static/client.js"></script>
-<script src="/theme/static/vue.js"></script>
+<script src="/static/client.js"></script>
+<script src="/static/vue.js"></script>
 
 </body>
 </html>
