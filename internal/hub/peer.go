@@ -24,7 +24,6 @@ type Peer struct {
 	// Rate limiting.
 	numMessages int
 	lastMessage time.Time
-	closed      bool
 }
 
 type peerInfo struct {
@@ -55,13 +54,16 @@ func (p *Peer) RunListener() {
 		}
 		p.processMessage(m)
 	}
-	p.leave()
+
+	// WS connection is closed.
+	p.ws.Close()
+	p.room.queuePeerReq(TypePeerLeave, p)
 }
 
 // RunWriter is a blocking function that writes messages in a peer's queue to the
 // peer's WS connection. This should be invoked as a goroutine.
 func (p *Peer) RunWriter() {
-	defer p.leave()
+	defer p.ws.Close()
 	for {
 		select {
 		// Wait for outgoing message to appear in the channel.
@@ -80,16 +82,6 @@ func (p *Peer) RunWriter() {
 // SendData queues a message to be written to the peer's WS.
 func (p *Peer) SendData(b []byte) {
 	p.dataQ <- b
-}
-
-// close closes's the peer's WS connection and sends a signal to the room
-// to remove the peer.
-func (p *Peer) leave() {
-	if p.closed {
-		return
-	}
-	p.closed = true
-	p.room.queuePeerReq(TypePeerLeave, p)
 }
 
 // writeWSData writes the given payload to the peer's WS connection.
@@ -120,8 +112,10 @@ func (p *Peer) processMessage(b []byte) {
 		if p.numMessages > 0 {
 			if (p.numMessages%p.room.hub.cfg.RateLimitMessages+1) >= p.room.hub.cfg.RateLimitMessages &&
 				time.Since(p.lastMessage) < p.room.hub.cfg.RateLimitInterval {
-				p.SendData(p.room.makePeerUpdatePayload(p, TypePeerRateLimited))
-				p.leave()
+				p.room.hub.Store.RemoveSession(p.ID, p.room.ID)
+				p.writeWSControl(websocket.CloseMessage,
+					websocket.FormatCloseMessage(websocket.CloseNormalClosure, TypePeerRateLimited))
+				p.ws.Close()
 				return
 			}
 		}

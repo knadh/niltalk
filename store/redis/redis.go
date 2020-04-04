@@ -161,6 +161,9 @@ func (r *Redis) GetSession(sessID, roomID string) (store.Sess, error) {
 	if err != nil && err != redis.ErrNil {
 		return store.Sess{}, err
 	}
+	if h == "" {
+		return store.Sess{}, nil
+	}
 
 	return store.Sess{
 		ID:     sessID,

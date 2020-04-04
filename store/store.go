@@ -15,7 +15,7 @@ type Store interface {
 
 	AddSession(sessID, handle, roomID string, ttl time.Duration) error
 	GetSession(sessID, roomID string) (Sess, error)
-	RemoveSession(roomID, sessID string) error
+	RemoveSession(sessID, roomID string) error
 	ClearSessions(roomID string) error
 }
 

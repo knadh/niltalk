@@ -20,6 +20,7 @@ const (
 	TypePeerLeave       = "peer.leave"
 	TypePeerRateLimited = "peer.ratelimited"
 	TypeRoomDispose     = "room.dispose"
+	TypeRoomFull        = "room.full"
 	TypeNotice          = "notice"
 	TypeHandle          = "handle"
 )

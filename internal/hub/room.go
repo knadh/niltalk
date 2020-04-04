@@ -118,9 +118,11 @@ loop:
 			// A new peer has joined.
 			case TypePeerJoin:
 				// Room's capacity is exchausted. Kick the peer out.
-				if len(r.peers) > r.hub.cfg.MaxPeersPerRoom {
-					req.peer.writeWSData(websocket.CloseMessage, r.makePayload("room is full", TypeNotice))
-					req.peer.leave()
+				if len(r.peers) >= r.hub.cfg.MaxPeersPerRoom {
+					r.hub.Store.RemoveSession(req.peer.ID, r.ID)
+					req.peer.writeWSControl(websocket.CloseMessage,
+						websocket.FormatCloseMessage(websocket.CloseNormalClosure, TypeRoomFull))
+					req.peer.ws.Close()
 					continue
 				}
 
@@ -191,7 +193,7 @@ func (r *Room) remove() {
 	// Close all peer WS connections.
 	for peer := range r.peers {
 		peer.writeWSControl(websocket.CloseMessage,
-			websocket.FormatCloseMessage(websocket.CloseNormalClosure, "room disposed"))
+			websocket.FormatCloseMessage(websocket.CloseNormalClosure, TypeRoomDispose))
 		delete(r.peers, peer)
 	}
 
