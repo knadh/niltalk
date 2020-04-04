@@ -341,7 +341,7 @@ var app = new Vue({
                 }
             });
             this.$nextTick().then(function () {
-                this.$refs["messages"].scrollTop = this.$refs["messages"].scrollHeight;
+                this.$refs["messages"].querySelector(".message:last-child").scrollIntoView();
             }.bind(this));
         },
 
@@ -399,7 +399,7 @@ var app = new Vue({
                         changed = true;
                     }
                 });
-                if(changed) {
+                if (changed) {
                     this.$forceUpdate();
                 }
             }, typingDebounceInterval);
