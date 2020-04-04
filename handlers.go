@@ -95,7 +95,7 @@ func handleRoomPage(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Cache-Control", "no-cache, no-store, must-revalidate")
 	w.Header().Set("Pragma", "no-cache")
 	w.Header().Set("Expires", "0")
-	respondHTML("room", out, http.StatusNotFound, w, app)
+	respondHTML("room", out, http.StatusOK, w, app)
 }
 
 // handleLogin authenticates a peer into a room.
@@ -177,7 +177,7 @@ func handleWS(w http.ResponseWriter, r *http.Request) {
 	)
 
 	if ctx.sess.ID == "" {
-		respondJSON(w, nil, errors.New("invalid session"), http.StatusBadRequest)
+		respondJSON(w, nil, errors.New("invalid session"), http.StatusForbidden)
 		return
 	}
 

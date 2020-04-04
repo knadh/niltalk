@@ -290,7 +290,6 @@ var app = new Vue({
         },
 
         onDisconnect(typ) {
-            console.log(typ);
             switch (typ) {
                 case Client.MsgType["disconnect"]:
                     this.notify("Disconnected. Retrying ...", notifType.notice);

@@ -1,0 +1,51 @@
+[app]
+address = "0.0.0.0:9000"
+
+# No trailing slashes.
+root_url = "http://localhost:9000"
+
+name = "Niltalk chat"
+
+max_rooms = 1000
+max_peers_per_room = 25
+
+# Peer handle format (%s for ID) for peers who don't pick handles.
+peer_handle_format = "Peer:%s"
+
+# Length of the randomly generated room ID.
+room_id_length = 8
+
+# The number of messages and events (join / leave) etc. that has to be cached
+# in a room to send to peers when they first join.
+max_cached_messages = 100
+
+# Maximum message length in bytes.
+max_message_length = 3000
+
+# Permitted message rate (messages / interval) after which a peer is kicked.
+rate_limit_messages = 25
+rate_limit_interval = "2s"
+
+# Seconds of inactivity after which a room will be auto-disposed.
+room_timeout = 600
+
+# How long will the room id persist in the db before first use?
+room_age = 7200
+
+# Timeout in seconds for which the server will wait when sending
+# a message to a peer before closing the connection. Useful for
+# kicking out peers with slow connections.
+websocket_timeout = 3
+
+# Redis cache server.
+# Rooms are cached until they expires. Messages are not cached.
+[store]
+address = "127.0.0.1:6379"
+password = ""
+db = 6
+active_conns = 100
+idle_conns = 20
+timeout = 3
+
+prefix_room = "NIL:ROOM:%s"
+prefix_session = "NIL:SESS:ROOM:%s"
