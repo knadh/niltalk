@@ -73,8 +73,17 @@ func (r *Redis) AddRoom(room store.Room, ttl time.Duration) error {
 		"name", room.Name,
 		"created_at", room.CreatedAt.Format(time.RFC3339),
 		"password", room.Password)
-	c.Send("EXPIRE", key, ttl.Seconds)
+	c.Send("EXPIRE", key, int(ttl.Seconds()))
 	return c.Flush()
+}
+
+// ExtendRoomTTL extends a room's TTL.
+func (r *Redis) ExtendRoomTTL(id string, ttl time.Duration) error {
+	c := r.pool.Get()
+	defer c.Close()
+
+	_, err := c.Do("EXPIRE", fmt.Sprintf(r.cfg.PrefixRoom, id), int(ttl.Seconds()))
+	return err
 }
 
 // GetRoom gets a room from the store.

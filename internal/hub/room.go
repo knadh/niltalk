@@ -57,6 +57,8 @@ type Room struct {
 
 	// Message / payload cache.
 	payloadCache [][]byte
+
+	timestamp time.Time
 }
 
 // NewRoom returns a new instance of Room.
@@ -92,12 +94,6 @@ func (r *Room) Broadcast(data []byte, record bool) {
 	if record {
 		r.recordMsgPayload(data)
 	}
-
-	// Extend the room's expiry.
-	// if time.Since(r.timestamp) > time.Duration(30)*time.Second {
-	// 	r.timestamp = time.Now()
-	// 	r.setExpiry(config.RoomTimeout)
-	// }
 }
 
 // run is a blocking function that starts the main event loop for a room that
@@ -165,6 +161,12 @@ loop:
 				p.SendData(m)
 			}
 
+			// Extend the room's expiry (once every 30 seconds).
+			if time.Since(r.timestamp) > time.Duration(30)*time.Second {
+				r.timestamp = time.Now()
+				r.extendTTL()
+			}
+
 		// Kill the room after the inactivity period.
 		case <-time.After(r.hub.cfg.RoomTimeout):
 			break loop
@@ -173,6 +175,11 @@ loop:
 
 	r.hub.log.Printf("stopped room: %v", r.ID)
 	r.remove()
+}
+
+// extendTTL extends a room's TTL in the store.
+func (r *Room) extendTTL() {
+	r.hub.Store.ExtendRoomTTL(r.ID, r.hub.cfg.RoomAge)
 }
 
 // remove disposes a room by notifying and disconnecting all peers and
@@ -221,9 +228,6 @@ func (r *Room) queuePeerReq(reqType string, p *Peer) {
 func (r *Room) removePeer(p *Peer) {
 	close(p.dataQ)
 	delete(r.peers, p)
-
-	// Notify all peers of the event.
-	r.Broadcast(r.makePeerUpdatePayload(p, TypePeerLeave), true)
 }
 
 // sendPeerList sends the peer list to the given peer.
