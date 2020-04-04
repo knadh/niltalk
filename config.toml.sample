@@ -24,28 +24,28 @@ max_message_length = 3000
 
 # Permitted message rate (messages / interval) after which a peer is kicked.
 rate_limit_messages = 25
-rate_limit_interval = "2s"
-
-# Seconds of inactivity after which a room will be auto-disposed.
-room_timeout = 600
+rate_limit_interval = "3s"
 
 # How long will the room id persist in the db before first use?
-room_age = 7200
+room_age = "24h"
 
 # Timeout in seconds for which the server will wait when sending
 # a message to a peer before closing the connection. Useful for
 # kicking out peers with slow connections.
-websocket_timeout = 3
+websocket_timeout = "3s"
+
+# Session cookie name.
+session_cookie = "niltoken"
 
 # Redis cache server.
 # Rooms are cached until they expires. Messages are not cached.
 [store]
 address = "127.0.0.1:6379"
 password = ""
-db = 6
+db = 0
 active_conns = 100
 idle_conns = 20
-timeout = 3
+timeout = "3s"
 
 prefix_room = "NIL:ROOM:%s"
 prefix_session = "NIL:SESS:ROOM:%s"

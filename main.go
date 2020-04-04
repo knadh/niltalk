@@ -4,8 +4,10 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"html/template"
+	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
@@ -64,12 +66,25 @@ func loadConfig() {
 		os.Exit(0)
 	}
 
+	// Generate new config.
+	if ok, _ := f.GetBool("new-config"); ok {
+		if err := newConfigFile(); err != nil {
+			logger.Println(err)
+			os.Exit(1)
+		}
+		logger.Println("generated config.toml. Edit and run the app.")
+		os.Exit(0)
+	}
+
 	// Read the config files.
 	cFiles, _ := f.GetStringSlice("config")
 	for _, f := range cFiles {
-		log.Printf("reading config: %s", f)
+		logger.Printf("reading config: %s", f)
 		if err := ko.Load(file.Provider(f), toml.Parser()); err != nil {
-			log.Printf("error reading config: %v", err)
+			if os.IsNotExist(err) {
+				logger.Fatal("config file not found. If there isn't one yet, run --new-config to generate one.")
+			}
+			logger.Fatalf("error loadng config from file: %v.", err)
 		}
 	}
 
@@ -78,7 +93,7 @@ func loadConfig() {
 		return strings.Replace(strings.ToLower(
 			strings.TrimPrefix(s, "NILTALK_")), "__", ".", -1)
 	}), nil); err != nil {
-		log.Printf("error loading env config: %v", err)
+		logger.Printf("error loading env config: %v", err)
 	}
 
 	// Merge command line flags into config.
@@ -101,7 +116,10 @@ func initFS(staticDir string) stuffbin.FileSystem {
 		if err == stuffbin.ErrNoID {
 			// First argument is to the root to mount the files in the FileSystem
 			// and the rest of the arguments are paths to embed.
-			fs, err = stuffbin.NewLocalFS("./", "./static/templates", "./static/static:/static")
+			fs, err = stuffbin.NewLocalFS("./",
+				"./static/templates",
+				"./static/static:/static",
+				"config.toml.sample")
 			if err != nil {
 				log.Fatalf("error falling back to local filesystem: %v", err)
 			}
@@ -140,6 +158,22 @@ func catchInterrupts() {
 			os.Exit(0)
 		}
 	}()
+}
+
+func newConfigFile() error {
+	if _, err := os.Stat("config.toml"); !os.IsNotExist(err) {
+		return errors.New("config.toml exists. Remove it to generate a new one")
+	}
+
+	// Initialize the static file system into which all
+	// required static assets (.sql, .js files etc.) are loaded.
+	fs := initFS("")
+	b, err := fs.Read("config.toml.sample")
+	if err != nil {
+		return fmt.Errorf("error reading sample config (is binary stuffed?): %v", err)
+	}
+
+	return ioutil.WriteFile("config.toml", b, 0644)
 }
 
 func main() {

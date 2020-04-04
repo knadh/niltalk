@@ -4,7 +4,7 @@ VERSION := $(shell git describe)
 BUILDSTR := ${VERSION} (${LAST_COMMIT} $(shell date -u +"%Y-%m-%dT%H:%M:%S%z"))
 
 BIN := niltalk
-STATIC := static/templates static/static:/static
+STATIC := static/templates static/static:/static config.toml.sample
 
 .PHONY: build
 build:
