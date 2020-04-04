@@ -338,10 +338,10 @@ var app = new Vue({
             this.onPeers(peers);
 
             // Notice in the message area;
+            peer.avatar = this.hashColor(peer.id);
             this.messages.push({
                 type: typ,
-                id: peer.id,
-                handle: peer.handle,
+                peer: peer,
                 timestamp: data.timestamp
             });
             this.scrollToNewester();
@@ -357,7 +357,6 @@ var app = new Vue({
                     return 0;
                 }
             });
-
 
             peers.forEach(p => {
                 p.avatar = this.hashColor(p.id);
