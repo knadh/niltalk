@@ -12,6 +12,7 @@ import (
 	"os/signal"
 	"strings"
 	"syscall"
+	"time"
 
 	"github.com/go-chi/chi"
 	"github.com/knadh/koanf"
@@ -136,6 +137,11 @@ func main() {
 	}
 	if err := ko.Unmarshal("app", &app.cfg); err != nil {
 		logger.Fatalf("error unmarshalling 'app' config: %v", err)
+	}
+
+	minTime := time.Duration(3) * time.Second
+	if app.cfg.RoomAge < minTime || app.cfg.WSTimeout < minTime {
+		logger.Fatal("app.websocket_timeout and app.roomage should be > 3s")
 	}
 
 	// Initialize store.
