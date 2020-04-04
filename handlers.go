@@ -95,6 +95,11 @@ func handleLogin(w http.ResponseWriter, r *http.Request) {
 		room = ctx.room
 	)
 
+	if room == nil {
+		respondJSON(w, nil, errors.New("room is invalid or has expired"), http.StatusBadRequest)
+		return
+	}
+
 	var req reqRoom
 	if err := readJSONReq(r, &req); err != nil {
 		respondJSON(w, nil, errors.New("error parsing JSON request"), http.StatusBadRequest)

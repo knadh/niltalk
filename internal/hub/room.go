@@ -169,7 +169,7 @@ loop:
 			}
 
 		// Kill the room after the inactivity period.
-		case <-time.After(r.hub.cfg.RoomTimeout):
+		case <-time.After(r.hub.cfg.RoomAge):
 			break loop
 		}
 	}

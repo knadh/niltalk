@@ -12,7 +12,6 @@ import (
 	"os/signal"
 	"strings"
 	"syscall"
-	"time"
 
 	"github.com/go-chi/chi"
 	"github.com/knadh/koanf"
@@ -138,16 +137,12 @@ func main() {
 	if err := ko.Unmarshal("app", &app.cfg); err != nil {
 		logger.Fatalf("error unmarshalling 'app' config: %v", err)
 	}
-	app.cfg.WSTimeout = app.cfg.WSTimeout * time.Second
-	app.cfg.RoomTimeout = app.cfg.RoomTimeout * time.Second
-	app.cfg.RoomAge = app.cfg.RoomAge * time.Second
 
 	// Initialize store.
 	var storeCfg redis.Config
 	if err := ko.Unmarshal("store", &storeCfg); err != nil {
 		logger.Fatalf("error unmarshalling 'store' config: %v", err)
 	}
-	storeCfg.Timeout = storeCfg.Timeout * time.Second
 
 	store, err := redis.New(storeCfg)
 	if err != nil {
