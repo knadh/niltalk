@@ -38,7 +38,7 @@
 		<div class="messages" ref="messages">
 			<ul class="no peers">
 				<li v-for="m in messages" class="message">
-					<div class="wrap" v-if="m.type === Client.MsgType.Message">
+					<div class="wrap" v-if="m.type === Client.MsgType['message']">
 						<div class="meta">
 							<span class="peer">
 								<span class="avatar" :style="{'background-color': m.peer.avatar}"></span>
@@ -50,7 +50,7 @@
 					</div>
 					<div class="wrap notice" v-else>
 						<span class="timestamp" :title="m.timestamp">{( formatDate(m.timestamp) )}</span>
-						&mdash; {( m.handle )} {(m.type === Client.MsgType.PeerJoin ? "joined" : "left")}
+						&mdash; {( m.handle )} {(m.type === Client.MsgType['peer.join'] ? "joined" : "left")}
 					</div>
 				</li>
 			</ul>

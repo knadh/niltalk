@@ -1,18 +1,19 @@
 var Client = new function () {
 	const MsgType = {
-		"Connect": "connect",
-		"Disconnect": "disconnect",
-		"Reconnecting": "reconnecting",
-		"DisposeRoom": "room.dispose",
-		"Message": "message",
-		"Typing": "typing",
-		"PeerList": "peer.list",
-		"PeerInfo": "peer.info",
-		"PeerJoin": "peer.join",
-		"PeerLeave": "peer.leave",
-		"PeerRateLimited": "peer.ratelimited",
-		"Notice": "notice",
-		"Handle": "handle"
+		"connect": "connect",
+		"disconnect": "disconnect",
+		"reconnecting": "reconnecting",
+		"room.dispose": "room.dispose",
+		"room.full": "room.full",
+		"message": "message",
+		"typing": "typing",
+		"peer.list": "peer.list",
+		"peer.info": "peer.info",
+		"peer.join": "peer.join",
+		"peer.leave": "peer.leave",
+		"peer.ratelimited": "peer.ratelimited",
+		"notice": "notice",
+		"handle": "handle"
 	};
 	this.MsgType = MsgType;
 
@@ -43,7 +44,7 @@ var Client = new function () {
 	this.connect = function () {
 		ws = new WebSocket(wsURL);
 		ws.onopen = function () {
-			trigger(MsgType.Connect);
+			trigger(MsgType["connect"]);
 		};
 
 		ws.onmessage = function (e) {
@@ -63,9 +64,13 @@ var Client = new function () {
 
 		ws.onclose = function (e) {
 			if (e.code == 1000) {
-				trigger(Client.MsgType.Dispose, [e.reason]);
+				if (e.reason && MsgType.hasOwnProperty(e.reason)) {
+					trigger(e.reason);
+					return
+				}
+				trigger(MsgType["disconnect"]);
 			} else if (e.code != 1005) {
-				trigger(Client.MsgType.Disconnect);
+				trigger(MsgType["disconnect"]);
 				attemptReconnection();
 			}
 		};
@@ -81,7 +86,7 @@ var Client = new function () {
 
 	// fetch peers list
 	this.getPeers = function () {
-		send({ "type": MsgType.PeerList });
+		send({ "type": MsgType["peer.list"] });
 	};
 
 	// send a message
@@ -117,7 +122,7 @@ var Client = new function () {
 	}
 
 	function attemptReconnection() {
-		trigger(Client.MsgType.Reconnecting, reconnectInterval);
+		trigger(MsgType["reconnecting"], reconnectInterval);
 		reconnect_timer = setTimeout(function () {
 			reconnect_timer = null;
 			self.connect();
