@@ -8,6 +8,7 @@ STATIC := static/templates static/static:/static config.toml.sample
 
 .PHONY: deps
 deps:
+	# If dependencies are not installed, install.
 	go get -u github.com/knadh/stuffbin/...
 
 .PHONY: build
@@ -19,16 +20,14 @@ run: build
 	 ./${BIN}
 
 .PHONY: dist
-dist: build
-	# If dependencies are not installed, install.
-	@type stuffbin >/dev/null 2>&1 || make deps
+dist: build deps
 	stuffbin -a stuff -in ${BIN} -out ${BIN} ${STATIC}
 
 # pack-releases runns stuffbin packing on a given list of
 # binaries. This is used with goreleaser for packing
 # release builds for cross-build targets.
 .PHONY: pack-releases
-pack-releases:
+pack-releases: deps
 	$(foreach var,$(RELEASE_BUILDS),stuffbin -a stuff -in ${var} -out ${var} ${STATIC} $(var);)
 
 .PHONY: test
