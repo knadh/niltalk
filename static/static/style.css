@@ -120,6 +120,10 @@ input:focus {
 }
 
 /* Helpers */
+.text-center {
+  text-align: center;
+}
+
 button,
 .button {
   background: #f74600;
