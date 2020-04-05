@@ -1,0 +1,30 @@
+# NOTE: This docker-compose.yml is meant to be just an example guideline
+# on how you can achieve the same. It is not intented to run out of the box
+# and you must edit the below configurations to suit your needs.
+
+version: "3.7"
+
+services:
+  redis:
+    image: redis:alpine
+    networks:
+      - niltalk
+    volumes:
+      - niltalk-data
+    restart: unless-stopped
+
+  niltalk:
+    image: kailashnadh/niltalk:latest
+    ports:
+      - "9000:9000"
+    networks:
+      - niltalk
+    depends_on:
+      - redis
+    restart: unless-stopped
+
+networks:
+  niltalk:
+
+volumes:
+  niltalk-data:

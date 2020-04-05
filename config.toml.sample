@@ -40,7 +40,7 @@ session_cookie = "niltoken"
 # Redis cache server.
 # Rooms are cached until they expires. Messages are not cached.
 [store]
-address = "127.0.0.1:6379"
+address = "redis:6379" # Eg: 127.0.0.1:6379
 password = ""
 db = 0
 active_conns = 100

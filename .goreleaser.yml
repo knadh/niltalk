@@ -1,0 +1,39 @@
+env:
+  - GO111MODULE=on
+  - CGO_ENABLED=0
+  - RELEASE_BUILDS=dist/niltalk_darwin_amd64/niltalk dist/niltalk_linux_amd64/niltalk dist/niltalk_windows_amd64/niltalk.exe
+
+builds:
+  - binary: niltalk
+    goos:
+      - linux
+      - darwin
+      - windows
+    goarch:
+      - amd64
+    ldflags:
+      - -s -w -X "main.buildString={{ .Tag }} ({{ .ShortCommit }} {{ .Date }})"
+    hooks:
+    # stuff binaries with static assets.
+      post: make pack-releases
+
+archives:
+  - format: tar.gz
+    files:
+      - README.md
+      - LICENSE
+
+dockers:
+  -
+    goos: linux
+    goarch: amd64
+    goarm: ''
+    binaries:
+    - niltalk
+    image_templates:
+    - "kailashnadh/niltalk:latest"
+    - "kailashnadh/niltalk:{{ .Tag }}"
+    skip_push: false
+    dockerfile: Dockerfile
+    extra_files:
+    - config.toml.sample

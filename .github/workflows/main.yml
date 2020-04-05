@@ -1,0 +1,30 @@
+name: goreleaser
+on:
+  # Trigger the workflow on push or pull request,
+  # but only if a semver tag is created.
+  push:
+    tags:        
+      - v*.*.*
+jobs:
+  goreleaser:
+    runs-on: ubuntu-latest
+    steps:
+      -
+        name: Checkout
+        uses: actions/checkout@v1
+      -
+        name: Set up Go
+        uses: actions/setup-go@v1
+        with:
+          go-version: 1.14.x
+      - 
+        name: Login to DockerHub Registry
+        run: echo ${{ secrets.DOCKER_PASSWORD }} | docker login -u ${{ secrets.DOCKER_USERNAME }} --password-stdin
+      -
+        name: Run goreleaser
+        uses: goreleaser/goreleaser-action@v1
+        with:
+          version: latest
+          args: release --rm-dist --skip-validate
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

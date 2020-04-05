@@ -15,10 +15,10 @@ Niltalk requires a Redis instance to persist room and session states.
 - Run `./niltalk` and visit http://localhost:9000.
 
 ### Docker
-TODO
+The official Docker image `niltalk:latest` is [available here](https://hub.docker.com/r/kailashnadh/niltalk). To try out the app, copy [docker-compose.yml](docker-compose.yml) and run `docker-compose run niltalk`.
 
 ### Customisation
-The static HTML/JS/CSS assets can be customized. Copy the `static` directory from the repository, change the files, and invoke like `./niltalk --static-dir=/path/to/custom/static`
+The static HTML/JS/CSS assets can be customized. Copy the `static` directory from the repository, change the files, and do: `./niltalk --static-dir=/path/to/custom/static`
 
 > This is a complete rewrite of the old version that had been dead and obsolete for several years (can be found in the `old` branch). These codebases are not compatible with each other and `master` has been overwritten.
 
