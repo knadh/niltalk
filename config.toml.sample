@@ -37,6 +37,9 @@ websocket_timeout = "3s"
 # Session cookie name.
 session_cookie = "niltoken"
 
+# Storage kind, one of redis|memory|fs.
+storage = "redis"
+
 # Redis cache server.
 # Rooms are cached until they expires. Messages are not cached.
 [store]
@@ -49,3 +52,11 @@ timeout = "3s"
 
 prefix_room = "NIL:ROOM:%s"
 prefix_session = "NIL:SESS:ROOM:%s"
+
+# InMemory store config.
+# [store]
+# no options available.
+
+# FileSystem store config.
+# [store]
+# path = "db.json"
