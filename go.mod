@@ -4,7 +4,6 @@ go 1.13
 
 require (
 	github.com/go-chi/chi v4.1.0+incompatible
-	github.com/go-yaml/yaml v2.1.0+incompatible // indirect
 	github.com/gomodule/redigo v2.0.0+incompatible
 	github.com/gorilla/websocket v1.4.2
 	github.com/knadh/koanf v0.9.1
