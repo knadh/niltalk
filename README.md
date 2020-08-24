@@ -7,7 +7,7 @@ be disposed of at any time.
 ![niltalk](https://user-images.githubusercontent.com/547147/78459728-9f8c3180-76d8-11ea-8c0a-9cf9bfe64341.png)
 
 ## Installation
-Niltalk requires a Redis instance to persist room and session states.
+Niltalk supports in-memory / file / Redis as the backend for persisting room and session states.
 
 ### Manual
 - Download the [latest release](https://github.com/knadh/niltalk/releases) for your platform and extract the binary.
