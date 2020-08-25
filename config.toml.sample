@@ -1,4 +1,5 @@
 [app]
+# Address to listen, use "tor" to run an hidden service.
 address = "0.0.0.0:9000"
 
 # No trailing slashes.

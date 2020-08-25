@@ -59,6 +59,7 @@ func loadConfig() {
 	f.StringSlice("config", []string{"config.toml"},
 		"Path to one or more TOML config files to load in order")
 	f.Bool("new-config", false, "generate sample config file")
+	f.Bool("onion", false, "Show the onion URL")
 	f.String("static-dir", "", "(optional) path to directory with static files")
 	f.Bool("version", false, "Show build version")
 	f.Parse(os.Args[1:])
@@ -238,6 +239,16 @@ func main() {
 	} else {
 		logger.Fatal("app.storage must be one of redis|memory|fs")
 	}
+
+	if ko.Bool("onion") {
+		pk, err := getOrCreatePK(store)
+		if err != nil {
+			logger.Fatal(err)
+		}
+		fmt.Printf("http://%v.onion\n", onionAddr(pk))
+		os.Exit(0)
+	}
+
 	app.hub = hub.NewHub(app.cfg, store, logger)
 
 	// Compile static templates.
@@ -264,11 +275,30 @@ func main() {
 	})
 
 	// Start the app.
-	srv := &http.Server{
-		Addr:    ko.String("app.address"),
-		Handler: r,
+	var srv interface {
+		ListenAndServe() error
 	}
-	logger.Printf("starting server on %v", ko.String("app.address"))
+
+	if appAddress := ko.String("app.address"); appAddress == "tor" {
+		pk, err := getOrCreatePK(store)
+		if err != nil {
+			logger.Fatalf("could not create the private key file: %v", err)
+		}
+
+		srv = &torServer{
+			PrivateKey: pk,
+			Handler:    r,
+		}
+		logger.Printf("starting server on http://%v.onion", onionAddr(pk))
+
+	} else {
+		srv = &http.Server{
+			Addr:    appAddress,
+			Handler: r,
+		}
+		logger.Printf("starting server on http://%v", appAddress)
+	}
+
 	if err := srv.ListenAndServe(); err != nil {
 		logger.Fatalf("couldn't start server: %v", err)
 	}
