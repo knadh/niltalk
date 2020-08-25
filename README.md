@@ -18,7 +18,8 @@ Niltalk supports in-memory / file / Redis as the backend for persisting room and
 The official Docker image `niltalk:latest` is [available here](https://hub.docker.com/r/kailashnadh/niltalk). To try out the app, copy [docker-compose.yml](docker-compose.yml) and run `docker-compose run niltalk`.
 
 ### Customisation
-The static HTML/JS/CSS assets can be customized. Copy the `static` directory from the repository, change the files, and do: `./niltalk --static-dir=/path/to/custom/static`
+The static HTML/JS/CSS assets can be customized. Copy the `static` directory from the repository
+to the working direcorty of your setup. Use `--jit` flag to compile templates on the fly.
 
 > This is a complete rewrite of the old version that had been dead and obsolete for several years (can be found in the `old` branch). These codebases are not compatible with each other and `master` has been overwritten.
 

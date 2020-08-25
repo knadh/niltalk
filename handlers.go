@@ -222,7 +222,13 @@ func respondHTML(tplName string, data tplData, statusCode int, w http.ResponseWr
 	}
 
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	err := app.tpl.ExecuteTemplate(w, tplName, tpl{
+	tplInstance, err := app.getTpl()
+	if err != nil {
+		app.logger.Printf("error compiling template %s: %s", tplName, err)
+		w.Write([]byte("error compiling template"))
+		return
+	}
+	err = tplInstance.ExecuteTemplate(w, tplName, tpl{
 		Config: app.cfg,
 		Data:   data,
 	})
