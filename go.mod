@@ -4,6 +4,8 @@ go 1.13
 
 require (
 	github.com/alecthomas/units v0.0.0-20190924025748-f65c72e2690d
+	github.com/clementauger/tor-prebuilt v0.0.0-20200815153310-0d7058794224
+	github.com/cretz/bine v0.1.0
 	github.com/go-chi/chi v4.1.0+incompatible
 	github.com/gomodule/redigo v2.0.0+incompatible
 	github.com/gorilla/websocket v1.4.2
