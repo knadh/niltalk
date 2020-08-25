@@ -117,6 +117,16 @@ func handleLogin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if req.Handle == "" {
+		h, err := hub.GenerateGUID(8)
+		if err != nil {
+			app.logger.Printf("error generating uniq handle: %v", err)
+			respondJSON(w, nil, errors.New("error generating uniq handle"), http.StatusInternalServerError)
+			return
+		}
+		req.Handle = h
+	}
+
 	// Validate password.
 	if err := bcrypt.CompareHashAndPassword(room.Password, []byte(req.Password)); err != nil {
 		respondJSON(w, nil, errors.New("incorrect password"), http.StatusForbidden)
