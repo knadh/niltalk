@@ -188,3 +188,18 @@ func (r *Redis) ClearSessions(roomID string) error {
 	_, err := redis.Bool(c.Do("DEL", fmt.Sprintf(r.cfg.PrefixSession, roomID)))
 	return err
 }
+
+// Get value from a key.
+func (r *Redis) Get(key string) ([]byte, error) {
+	c := r.pool.Get()
+	defer c.Close()
+	return redis.Bytes(c.Do("GET", key))
+}
+
+// Set a value.
+func (r *Redis) Set(key string, data []byte) error {
+	c := r.pool.Get()
+	defer c.Close()
+	_, err := c.Do("SET", key, data)
+	return err
+}
