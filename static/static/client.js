@@ -6,6 +6,7 @@ var Client = new function () {
 		"room.dispose": "room.dispose",
 		"room.full": "room.full",
 		"message": "message",
+		"upload": "upload",
 		"typing": "typing",
 		"peer.list": "peer.list",
 		"peer.info": "peer.info",

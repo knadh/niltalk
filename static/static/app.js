@@ -58,7 +58,10 @@ var app = new Vue({
         // Chat data.
         self: {},
         messages: [],
-        peers: []
+        peers: [],
+
+        // upload
+        isDraggingOver: false,
     },
     created: function () {
         this.initClient();
@@ -383,7 +386,7 @@ var app = new Vue({
 
             this.typingPeers.delete(data.data.peer_id);
             this.messages.push({
-                type: Client.MsgType["message"],
+                type: data.type,
                 timestamp: data.timestamp,
                 message: data.data.message,
                 peer: {
@@ -409,6 +412,7 @@ var app = new Vue({
             Client.on(Client.MsgType["peer.join"], (data) => { this.onPeerJoinLeave(data, Client.MsgType["peer.join"]); });
             Client.on(Client.MsgType["peer.leave"], (data) => { this.onPeerJoinLeave(data, Client.MsgType["peer.leave"]); });
             Client.on(Client.MsgType["message"], this.onMessage);
+            Client.on(Client.MsgType["upload"], this.onMessage);
             Client.on(Client.MsgType["typing"], this.onTyping);
         },
 
@@ -443,6 +447,48 @@ var app = new Vue({
                     this.$forceUpdate();
                 }
             }, typingDebounceInterval);
+        },
+
+        dragEnter(e) {
+          this.isDraggingOver=true
+        },
+
+        dragLeave(e) {
+          this.isDraggingOver=false
+        },
+
+        // image upload
+        addFile(e) {
+          this.isDraggingOver=false
+          // based on https://www.raymondcamden.com/2019/08/08/drag-and-drop-file-upload-in-vuejs
+          let droppedFiles = e.dataTransfer.files;
+          if(!droppedFiles) return;
+          // this tip, convert FileList to array, credit: https://www.smashingmagazine.com/2018/01/drag-drop-file-uploader-vanilla-js/
+          let formData = new FormData();
+          ([...droppedFiles]).forEach((f,x) => {
+            if (x<20) {
+              formData.append('file'+(x), f);
+            }else{
+              this.notify("Too much files to upload", notifType.error);
+            }
+          });
+
+          fetch("/api/rooms/" + _room.id + "/upload", {
+            method:'POST',
+            body: formData
+          })
+          .then(res => res.json())
+          .then(res => {
+            if (res.error){
+              this.notify(res.error, notifType.error);
+            }else{
+              Client.sendMessage(Client.MsgType["upload"], res.data.ids);
+            }
+          })
+          .catch(err => {
+            this.notify(err, notifType.error);
+          });
+
         }
     }
 });
