@@ -14,6 +14,7 @@ import (
 const (
 	TypeTyping          = "typing"
 	TypeMessage         = "message"
+	TypeUpload          = "upload"
 	TypePeerList        = "peer.list"
 	TypePeerInfo        = "peer.info"
 	TypePeerJoin        = "peer.join"

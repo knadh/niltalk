@@ -258,13 +258,13 @@ func (r *Room) makePeerUpdatePayload(p *Peer, peerUpdateType string) []byte {
 }
 
 // makeMessagePayload prepares a chat message.
-func (r *Room) makeMessagePayload(msg string, p *Peer) []byte {
+func (r *Room) makeMessagePayload(msg string, p *Peer, typ string) []byte {
 	d := payloadMsgChat{
 		PeerID:     p.ID,
 		PeerHandle: p.Handle,
 		Msg:        msg,
 	}
-	return r.makePayload(d, TypeMessage)
+	return r.makePayload(d, typ)
 }
 
 // makePayload prepares a message payload.

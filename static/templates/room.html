@@ -35,7 +35,11 @@
 			{( sidebarOn ? "&rarr;" : "&larr;" )}
 			<span class="icon">👥<sup>{( peers.length )}</sup></span>
 		</span>
-		<div class="messages" ref="messages">
+		<div class="messages" ref="messages"
+				@drop.prevent="addFile" @dragover.prevent
+				@dragenter.prevent.capture="dragEnter"
+				@dragleave.prevent.self="dragLeave"
+				v-bind:class="{ dragover: isDraggingOver }">
 			<ul class="no peers">
 				<li v-for="m in messages" class="message">
 					<div class="wrap" v-if="m.type === Client.MsgType['message']">
@@ -47,6 +51,20 @@
 							<span class="timestamp" :title="m.timestamp">{( formatDate(m.timestamp) )}</span>
 						</div>
 						<div class="content" v-html="formatMessage(m.message)"></div>
+					</div>
+					<div class="wrap" v-else-if="m.type === Client.MsgType['upload']">
+						<div class="meta">
+							<span class="peer">
+								<span class="avatar" :style="{'background-color': m.peer.avatar}"></span>
+								<span class="handle">{( m.peer.handle )}</span>
+							</span>
+							<span class="timestamp" :title="m.timestamp">{( formatDate(m.timestamp) )}</span>
+						</div>
+						<div class="content">
+							<a v-bind:href="'{{ .Config.RootURL }}/api/rooms/' + _room.id  + '/uploaded/' + m.message" target="_blank">
+								<img v-bind:src="'{{ .Config.RootURL }}/api/rooms/' + _room.id  + '/uploaded/' + m.message" class="upload" />
+							</a>
+						</div>
 					</div>
 					<div class="wrap notice" v-else>
 						<span class="timestamp" :title="m.timestamp">{( formatDate(m.timestamp) )}</span>
