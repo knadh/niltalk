@@ -74,7 +74,7 @@ func (m *File) cleanup() {
 
 // load the data from the file system.
 func (m *File) load() error {
-	if _, err := os.Stat(m.cfg.Path); os.IsExist(err) {
+	if _, err := os.Stat(m.cfg.Path); err == nil {
 		x := struct {
 			Rooms map[string]*room
 			Data  map[string][]byte
@@ -158,7 +158,7 @@ func (m *File) GetRoom(id string) (store.Room, error) {
 	out, ok := m.rooms[id]
 
 	if !ok {
-		return out.Room, store.ErrRoomNotFound
+		return store.Room{}, store.ErrRoomNotFound
 	}
 	return out.Room, nil
 }
