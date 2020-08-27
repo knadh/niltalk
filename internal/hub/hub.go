@@ -30,21 +30,29 @@ type Config struct {
 	Address string `koanf:"address"`
 	RootURL string `koanf:"root_url"`
 
-	Name              string        `koanf:"name"`
-	RoomIDLen         int           `koanf:"room_id_length"`
-	MaxCachedMessages int           `koanf:"max_cached_messages"`
-	MaxMessageLen     int           `koanf:"max_message_length"`
-	WSTimeout         time.Duration `koanf:"websocket_timeout"`
-	MaxMessageQueue   int           `koanf:"max_message_queue"`
-	RateLimitInterval time.Duration `koanf:"rate_limit_interval"`
-	RateLimitMessages int           `koanf:"rate_limit_messages"`
-	MaxRooms          int           `koanf:"max_rooms"`
-	MaxPeersPerRoom   int           `koanf:"max_peers_per_room"`
-	PeerHandleFormat  string        `koanf:"peer_handle_format"`
-	RoomTimeout       time.Duration `koanf:"room_timeout"`
-	RoomAge           time.Duration `koanf:"room_age"`
-	SessionCookie     string        `koanf:"session_cookie"`
-	Storage           string        `koanf:"storage"`
+	Name              string                    `koanf:"name"`
+	RoomIDLen         int                       `koanf:"room_id_length"`
+	MaxCachedMessages int                       `koanf:"max_cached_messages"`
+	MaxMessageLen     int                       `koanf:"max_message_length"`
+	WSTimeout         time.Duration             `koanf:"websocket_timeout"`
+	MaxMessageQueue   int                       `koanf:"max_message_queue"`
+	RateLimitInterval time.Duration             `koanf:"rate_limit_interval"`
+	RateLimitMessages int                       `koanf:"rate_limit_messages"`
+	MaxRooms          int                       `koanf:"max_rooms"`
+	MaxPeersPerRoom   int                       `koanf:"max_peers_per_room"`
+	PeerHandleFormat  string                    `koanf:"peer_handle_format"`
+	RoomTimeout       time.Duration             `koanf:"room_timeout"`
+	RoomAge           time.Duration             `koanf:"room_age"`
+	SessionCookie     string                    `koanf:"session_cookie"`
+	Storage           string                    `koanf:"storage"`
+	Rooms             map[string]PredefinedRoom `koanf:"rooms"`
+}
+
+// PredefinedRoom are static rooms declared in the configuration file.
+type PredefinedRoom struct {
+	ID       string `koanf:"id"`
+	Name     string `koanf:"name"`
+	Password string `koanf:"password"`
 }
 
 // Hub acts as the controller and container for all chat rooms.
@@ -86,7 +94,23 @@ func (h *Hub) AddRoom(name string, password []byte) (*Room, error) {
 	}
 
 	// Initialize the room.
-	return h.initRoom(id, name, password), nil
+	return h.initRoom(id, name, password, false), nil
+}
+
+// AddPredefinedRoom creates a predefined room in the store, adds it to the hub.
+// If it already exists, no error is returned.
+func (h *Hub) AddPredefinedRoom(ID, name string, password []byte) (*Room, error) {
+	// Add the room to DB.
+	if err := h.Store.AddPredefinedRoom(store.Room{ID: ID,
+		Name:      name,
+		CreatedAt: time.Now(),
+		Password:  password}); err != nil {
+		h.log.Printf("error creating room in the store: %v", err)
+		return nil, errors.New("error creating room")
+	}
+
+	// Initialize the room.
+	return h.initRoom(ID, name, password, true), nil
 }
 
 // ActivateRoom loads a room from the store into the hub if it's not already active.
@@ -104,7 +128,7 @@ func (h *Hub) ActivateRoom(id string) (*Room, error) {
 	}
 
 	// Initialize the room.
-	return h.initRoom(r.ID, r.Name, r.Password), nil
+	return h.initRoom(r.ID, r.Name, r.Password, room.Predefined), nil
 }
 
 // GetRoom retrives an active room from the hub.
@@ -116,8 +140,8 @@ func (h *Hub) GetRoom(id string) *Room {
 }
 
 // initRoom initializes a room on the Hub.
-func (h *Hub) initRoom(id, name string, password []byte) *Room {
-	r := NewRoom(id, name, password, h)
+func (h *Hub) initRoom(id, name string, password []byte, predefined bool) *Room {
+	r := NewRoom(id, name, password, predefined, h)
 	h.mut.Lock()
 	h.rooms[id] = r
 	h.mut.Unlock()

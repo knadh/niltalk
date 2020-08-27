@@ -8,6 +8,7 @@ import (
 // Store represents a backend store.
 type Store interface {
 	AddRoom(r Room, ttl time.Duration) error
+	AddPredefinedRoom(room Room) error
 	GetRoom(id string) (Room, error)
 	ExtendRoomTTL(id string, ttl time.Duration) error
 	RoomExists(id string) (bool, error)
