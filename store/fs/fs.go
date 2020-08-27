@@ -95,7 +95,7 @@ func (m *File) load() error {
 }
 
 // save the data to the file system.
-func (m *File) save() {
+func (m *File) save() error {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	if m.dirty {
@@ -108,14 +108,19 @@ func (m *File) save() {
 		})
 		if err == nil {
 			m.dirty = false
-			go func() {
-				err := ioutil.WriteFile(m.cfg.Path, data, os.ModePerm)
-				if err != nil {
-					m.log.Printf("error writing file %q: %v", m.cfg.Path, err)
-				}
-			}()
+			err = ioutil.WriteFile(m.cfg.Path, data, os.ModePerm)
+			if err != nil {
+				m.log.Printf("error writing file %q: %v", m.cfg.Path, err)
+			}
 		}
+		return err
 	}
+	return nil
+}
+
+// Close the database and save it on the file system.
+func (m *File) Close() error {
+	return m.save()
 }
 
 // AddRoom adds a room to the store.
