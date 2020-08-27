@@ -1,6 +1,9 @@
 [app]
-# Address to listen, use "tor" to run an hidden service.
+# Address to listen.
 address = "0.0.0.0:9000"
+
+# Enable tor.
+tor=false
 
 # No trailing slashes.
 root_url = "http://localhost:9000"

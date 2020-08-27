@@ -8,6 +8,7 @@ import (
 	"encoding/pem"
 	"fmt"
 	"io/ioutil"
+	"net"
 	"net/http"
 	"time"
 
@@ -60,8 +61,7 @@ func onionAddr(pk ed25519.PrivateKey) string {
 	return torutil.OnionServiceIDFromV3PublicKey(tued25519.PublicKey([]byte(pk.Public().(ed25519.PublicKey))))
 }
 
-func (ts *torServer) ListenAndServe() error {
-
+func (ts *torServer) Serve(ln net.Listener) error {
 	d, err := ioutil.TempDir("", "")
 	if err != nil {
 		return err
@@ -79,7 +79,7 @@ func (ts *torServer) ListenAndServe() error {
 	listenCtx, listenCancel := context.WithTimeout(context.Background(), 3*time.Minute)
 	defer listenCancel()
 	// Create a v3 onion service to listen on any port but show as 80
-	onion, err := t.Listen(listenCtx, &tor.ListenConf{Key: ts.PrivateKey, Version3: true, RemotePorts: []int{80}})
+	onion, err := t.Listen(listenCtx, &tor.ListenConf{LocalListener: ln, Key: ts.PrivateKey, Version3: true, RemotePorts: []int{80}})
 	if err != nil {
 		return fmt.Errorf("unable to create onion service: %v", err)
 	}
