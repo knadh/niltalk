@@ -236,12 +236,12 @@ func main() {
 	}
 
 	if ko.Bool("onion") {
-		pk, err := getOrCreatePK(store)
+		pk, err := loadTorPK(app.cfg, store)
 		if err != nil {
-			logger.Fatal(err)
+			logger.Fatalf("could not read or write the private key: %v", err)
 		}
 		fmt.Printf("http://%v.onion\n", onionAddr(pk))
-		os.Exit(0)
+		return // to allow for defers to execute
 	}
 
 	app.hub = hub.NewHub(app.cfg, store, logger)
@@ -277,9 +277,9 @@ func main() {
 	}
 
 	if app.cfg.Tor {
-		pk, err := getOrCreatePK(store)
+		pk, err := loadTorPK(app.cfg, store)
 		if err != nil {
-			logger.Fatalf("could not create the private key file: %v", err)
+			logger.Fatalf("could not read or write the private key: %v", err)
 		}
 
 		srv := &torServer{

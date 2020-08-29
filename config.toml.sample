@@ -5,6 +5,9 @@ address = "0.0.0.0:9000"
 # Enable tor.
 tor=false
 
+# Path to the tor privte key path, leave it empty to store your key within your store.
+privatekey=""
+
 # No trailing slashes.
 root_url = "http://localhost:9000"
 
