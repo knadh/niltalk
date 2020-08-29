@@ -45,6 +45,9 @@ type Config struct {
 	RoomAge           time.Duration `koanf:"room_age"`
 	SessionCookie     string        `koanf:"session_cookie"`
 	Storage           string        `koanf:"storage"`
+
+	Tor        bool   `koanf:"tor"`
+	PrivateKey string `koanf:"privatekey"`
 }
 
 // Hub acts as the controller and container for all chat rooms.

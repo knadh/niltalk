@@ -8,15 +8,25 @@ import (
 	"encoding/pem"
 	"fmt"
 	"io/ioutil"
+	"net"
 	"net/http"
+	"os"
 	"time"
 
 	"github.com/clementauger/tor-prebuilt/embedded"
 	"github.com/cretz/bine/tor"
 	"github.com/cretz/bine/torutil"
 	tued25519 "github.com/cretz/bine/torutil/ed25519"
+	"github.com/knadh/niltalk/internal/hub"
 	"github.com/knadh/niltalk/store"
 )
+
+func loadTorPK(cfg *hub.Config, store store.Store) (pk ed25519.PrivateKey, err error) {
+	if cfg.PrivateKey != "" {
+		return getOrCreatePKFile(cfg.PrivateKey)
+	}
+	return getOrCreatePK(store)
+}
 
 func getOrCreatePK(store store.Store) (privateKey ed25519.PrivateKey, err error) {
 	key := "onionkey"
@@ -50,6 +60,41 @@ func getOrCreatePK(store store.Store) (privateKey ed25519.PrivateKey, err error)
 	return privateKey, err
 }
 
+func getOrCreatePKFile(fpath string) (privateKey ed25519.PrivateKey, err error) {
+	if _, err := os.Stat(fpath); os.IsNotExist(err) {
+		_, privateKey, err = ed25519.GenerateKey(rand.Reader)
+		if err != nil {
+			return nil, err
+		}
+		var x509Encoded []byte
+		x509Encoded, err = x509.MarshalPKCS8PrivateKey(privateKey)
+		if err != nil {
+			return nil, err
+		}
+		pemEncoded := pem.EncodeToMemory(&pem.Block{Type: "ED25519 PRIVATE KEY", Bytes: x509Encoded})
+		ioutil.WriteFile(fpath, pemEncoded, os.ModePerm)
+	} else {
+		var d []byte
+		d, err = ioutil.ReadFile(fpath)
+		if err != nil {
+			return nil, err
+		}
+		block, _ := pem.Decode(d)
+		x509Encoded := block.Bytes
+		var tPk interface{}
+		tPk, err = x509.ParsePKCS8PrivateKey(x509Encoded)
+		if err != nil {
+			return nil, err
+		}
+		if x, ok := tPk.(ed25519.PrivateKey); ok {
+			privateKey = x
+		} else {
+			return nil, fmt.Errorf("invalid key type %T wanted ed25519.PrivateKey", tPk)
+		}
+	}
+	return privateKey, nil
+}
+
 type torServer struct {
 	Handler http.Handler
 	// PrivateKey path to a pem encoded ed25519 private key
@@ -60,8 +105,7 @@ func onionAddr(pk ed25519.PrivateKey) string {
 	return torutil.OnionServiceIDFromV3PublicKey(tued25519.PublicKey([]byte(pk.Public().(ed25519.PublicKey))))
 }
 
-func (ts *torServer) ListenAndServe() error {
-
+func (ts *torServer) Serve(ln net.Listener) error {
 	d, err := ioutil.TempDir("", "")
 	if err != nil {
 		return err
@@ -79,7 +123,7 @@ func (ts *torServer) ListenAndServe() error {
 	listenCtx, listenCancel := context.WithTimeout(context.Background(), 3*time.Minute)
 	defer listenCancel()
 	// Create a v3 onion service to listen on any port but show as 80
-	onion, err := t.Listen(listenCtx, &tor.ListenConf{Key: ts.PrivateKey, Version3: true, RemotePorts: []int{80}})
+	onion, err := t.Listen(listenCtx, &tor.ListenConf{LocalListener: ln, Key: ts.PrivateKey, Version3: true, RemotePorts: []int{80}})
 	if err != nil {
 		return fmt.Errorf("unable to create onion service: %v", err)
 	}
