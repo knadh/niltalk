@@ -166,9 +166,11 @@ loop:
 			}
 
 			// Extend the room's expiry (once every 30 seconds).
-			if time.Since(r.timestamp) > time.Duration(30)*time.Second {
-				r.timestamp = time.Now()
-				r.extendTTL()
+			if !r.Predefined {
+				if time.Since(r.timestamp) > time.Duration(30)*time.Second {
+					r.timestamp = time.Now()
+					r.extendTTL()
+				}
 			}
 
 		// Kill the room after the inactivity period.
