@@ -268,9 +268,19 @@ form .help {
   overflow-y: auto;
   padding-right: 15px;
 }
+.chat .messages.dragover {
+  border-style: dashed;
+  border-width: 2px;
+  border-color: gray;
+}
 .chat .messages .message {
   border-bottom: 1px solid #eee;
   padding: 15px 0;
+}
+.chat .messages .message .upload {
+  max-width: 50%;
+  margin: auto;
+  display: block;
 }
 .chat .messages .message:hover {
   background: #fafafa;

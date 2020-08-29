@@ -24,6 +24,7 @@ import (
 	"github.com/knadh/koanf/providers/file"
 	"github.com/knadh/koanf/providers/posflag"
 	"github.com/knadh/niltalk/internal/hub"
+	"github.com/knadh/niltalk/internal/upload"
 	"github.com/knadh/niltalk/store"
 	"github.com/knadh/niltalk/store/fs"
 	"github.com/knadh/niltalk/store/mem"
@@ -258,6 +259,17 @@ func main() {
 	}
 	app.tpl = tpl
 
+	// Setup the file upload store.
+	var uploadCfg upload.Config
+	if err := ko.Unmarshal("upload", &uploadCfg); err != nil {
+		logger.Fatalf("error unmarshalling 'upload' config: %v", err)
+	}
+
+	uploadStore := upload.New(uploadCfg)
+	if err := uploadStore.Init(); err != nil {
+		logger.Fatalf("error initializing upload store: %v", err)
+	}
+
 	// Register HTTP routes.
 	r := chi.NewRouter()
 	r.Get("/", wrap(handleIndex, app, 0))
@@ -267,6 +279,9 @@ func main() {
 	r.Post("/api/rooms/{roomID}/login", wrap(handleLogin, app, hasRoom))
 	r.Delete("/api/rooms/{roomID}/login", wrap(handleLogout, app, hasAuth|hasRoom))
 	r.Post("/api/rooms", wrap(handleCreateRoom, app, 0))
+
+	r.Post("/api/rooms/{roomID}/upload", handleUpload(uploadStore))
+	r.Get("/api/rooms/{roomID}/uploaded/{fileID}", handleUploaded(uploadStore))
 
 	// Views.
 	r.Get("/r/{roomID}", wrap(handleRoomPage, app, hasAuth|hasRoom))

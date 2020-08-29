@@ -127,7 +127,36 @@ func (p *Peer) processMessage(b []byte) {
 			// TODO: Respond
 			return
 		}
-		p.room.Broadcast(p.room.makeMessagePayload(msg, p), true)
+		p.room.Broadcast(p.room.makeMessagePayload(msg, p, m.Type), true)
+
+	case TypeUpload:
+		// Check rate limits and update counters.
+		now := time.Now()
+		if p.numMessages > 0 {
+			if (p.numMessages%p.room.hub.cfg.RateLimitMessages+1) >= p.room.hub.cfg.RateLimitMessages &&
+				time.Since(p.lastMessage) < p.room.hub.cfg.RateLimitInterval {
+				p.room.hub.Store.RemoveSession(p.ID, p.room.ID)
+				p.writeWSControl(websocket.CloseMessage,
+					websocket.FormatCloseMessage(websocket.CloseNormalClosure, TypePeerRateLimited))
+				p.ws.Close()
+				return
+			}
+		}
+		p.lastMessage = now
+		p.numMessages++
+
+		msgs, ok := m.Data.([]interface{})
+		if !ok {
+			// TODO: Respond
+			return
+		}
+		for _, msg := range msgs {
+			x, ok := msg.(string)
+			if !ok {
+				continue
+			}
+			p.room.Broadcast(p.room.makeMessagePayload(x, p, m.Type), true)
+		}
 
 	// "Typing" status.
 	case TypeTyping:

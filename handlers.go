@@ -4,13 +4,20 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io/ioutil"
+	"log"
 	"net/http"
+	"strings"
+	"sync"
+	"time"
 
 	"github.com/go-chi/chi"
 	"github.com/gorilla/websocket"
 	"github.com/knadh/niltalk/internal/hub"
+	"github.com/knadh/niltalk/internal/upload"
 	"golang.org/x/crypto/bcrypt"
+	"golang.org/x/time/rate"
 )
 
 const (
@@ -336,4 +343,105 @@ func readJSONReq(r *http.Request, o interface{}) error {
 		return err
 	}
 	return json.Unmarshal(b, o)
+}
+
+// handleUpload handles file uploads.
+func handleUpload(store *upload.Store) func(w http.ResponseWriter, r *http.Request) {
+
+	type roomLimiter struct {
+		limiter *rate.Limiter
+		expire  time.Time
+	}
+	var mu sync.Mutex
+	roomLimiters := map[string]roomLimiter{}
+	go func() {
+		t := time.NewTicker(store.RlPeriod + (time.Minute))
+		defer t.Stop()
+		for range t.C {
+			now := time.Now()
+			mu.Lock()
+			for k, r := range roomLimiters {
+				if r.expire.Before(now) {
+					delete(roomLimiters, k)
+				}
+			}
+			mu.Unlock()
+		}
+	}()
+
+	return func(w http.ResponseWriter, r *http.Request) {
+		r.ParseMultipartForm(store.MaxUploadSize)
+
+		roomID := chi.URLParam(r, "roomID")
+		mu.Lock()
+		// no defer here becasue file upload can be slow, thus lock for too long
+		x, ok := roomLimiters[roomID]
+		if !ok {
+			x = roomLimiter{
+				limiter: rate.NewLimiter(rate.Every(store.RlPeriod/time.Duration(store.RlCount)), store.RlBurst),
+				expire:  time.Now().Add(time.Minute * 10),
+			}
+			roomLimiters[roomID] = x
+		}
+		x.expire = time.Now().Add(time.Minute * 10)
+		roomLimiters[roomID] = x
+		mu.Unlock()
+		if !x.limiter.Allow() {
+			err := errors.New(http.StatusText(http.StatusTooManyRequests))
+			respondJSON(w, nil, err, http.StatusTooManyRequests)
+			return
+		}
+
+		var ids []string
+		for i := 0; i < 20; i++ {
+			key := fmt.Sprintf("file%v", i)
+			file, handler, err := r.FormFile(key)
+			if err == http.ErrMissingFile {
+				break
+			}
+			if err != nil {
+				continue
+			}
+			defer file.Close()
+			b, err := ioutil.ReadAll(file)
+			if err != nil {
+				continue
+			}
+			mimeType := http.DetectContentType(b)
+			if mimeType == "image/gif" || mimeType == "image/jpeg" || mimeType == "image/png" {
+				name := handler.Filename
+				up, err := store.Add(name, mimeType, b)
+				if err != nil {
+					continue
+				}
+				ids = append(ids, fmt.Sprintf("%v_%v", up.ID, up.Name))
+			}
+		}
+
+		respondJSON(w, struct {
+			IDs []string `json:"ids"`
+		}{ids}, nil, http.StatusOK)
+	}
+}
+
+// handleUploaded uploaded files display.
+func handleUploaded(store *upload.Store) func(w http.ResponseWriter, r *http.Request) {
+	maxAgeHeader := fmt.Sprintf("max-age=%v", int64(store.MaxAge/time.Second))
+	return func(w http.ResponseWriter, r *http.Request) {
+		fileID := chi.URLParam(r, "fileID")
+		fileID = strings.Split(fileID, "_")[0]
+		up, err := store.Get(fileID)
+		if err != nil {
+			log.Println(err)
+			respondJSON(w, nil, err, http.StatusNotFound)
+			return
+		}
+		w.Header().Add("Content-Type", up.MimeType)
+		w.Header().Add("Content-Length", fmt.Sprint(len(up.Data)))
+		if store.MaxAge > 0 {
+			w.Header().Add("Cache-Control", maxAgeHeader)
+		}
+		w.WriteHeader(http.StatusOK)
+		w.Write(up.Data)
+	}
 }
