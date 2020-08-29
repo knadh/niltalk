@@ -346,7 +346,7 @@ func readJSONReq(r *http.Request, o interface{}) error {
 }
 
 // handleUpload handles file uploads.
-func handleUpload(store *upload.Store, maxUploadSize int64, rlPeriod time.Duration, rlCount float64, rlBurst int) func(w http.ResponseWriter, r *http.Request) {
+func handleUpload(store *upload.Store) func(w http.ResponseWriter, r *http.Request) {
 
 	type roomLimiter struct {
 		limiter *rate.Limiter
@@ -355,7 +355,7 @@ func handleUpload(store *upload.Store, maxUploadSize int64, rlPeriod time.Durati
 	var mu sync.Mutex
 	roomLimiters := map[string]roomLimiter{}
 	go func() {
-		t := time.NewTicker(rlPeriod + (time.Minute))
+		t := time.NewTicker(store.RlPeriod + (time.Minute))
 		defer t.Stop()
 		for range t.C {
 			now := time.Now()
@@ -370,7 +370,7 @@ func handleUpload(store *upload.Store, maxUploadSize int64, rlPeriod time.Durati
 	}()
 
 	return func(w http.ResponseWriter, r *http.Request) {
-		r.ParseMultipartForm(maxUploadSize)
+		r.ParseMultipartForm(store.MaxUploadSize)
 
 		roomID := chi.URLParam(r, "roomID")
 		mu.Lock()
@@ -378,7 +378,7 @@ func handleUpload(store *upload.Store, maxUploadSize int64, rlPeriod time.Durati
 		x, ok := roomLimiters[roomID]
 		if !ok {
 			x = roomLimiter{
-				limiter: rate.NewLimiter(rate.Every(rlPeriod/time.Duration(rlCount)), rlBurst),
+				limiter: rate.NewLimiter(rate.Every(store.RlPeriod/time.Duration(store.RlCount)), store.RlBurst),
 				expire:  time.Now().Add(time.Minute * 10),
 			}
 			roomLimiters[roomID] = x
@@ -425,8 +425,8 @@ func handleUpload(store *upload.Store, maxUploadSize int64, rlPeriod time.Durati
 }
 
 // handleUploaded uploaded files display.
-func handleUploaded(store *upload.Store, maxAge time.Duration) func(w http.ResponseWriter, r *http.Request) {
-	maxAgeHeader := fmt.Sprintf("max-age=%v", int64(maxAge/time.Second))
+func handleUploaded(store *upload.Store) func(w http.ResponseWriter, r *http.Request) {
+	maxAgeHeader := fmt.Sprintf("max-age=%v", int64(store.MaxAge/time.Second))
 	return func(w http.ResponseWriter, r *http.Request) {
 		fileID := chi.URLParam(r, "fileID")
 		fileID = strings.Split(fileID, "_")[0]
@@ -438,7 +438,7 @@ func handleUploaded(store *upload.Store, maxAge time.Duration) func(w http.Respo
 		}
 		w.Header().Add("Content-Type", up.MimeType)
 		w.Header().Add("Content-Length", fmt.Sprint(len(up.Data)))
-		if maxAge > 0 {
+		if store.MaxAge > 0 {
 			w.Header().Add("Cache-Control", maxAgeHeader)
 		}
 		w.WriteHeader(http.StatusOK)

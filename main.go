@@ -13,14 +13,11 @@ import (
 	"os"
 	"os/signal"
 	"path/filepath"
-	"strconv"
 	"strings"
 	"syscall"
 	"time"
 
-	"github.com/alecthomas/units"
 	"github.com/go-chi/chi"
-	"github.com/karrick/tparse/v2"
 	"github.com/knadh/koanf"
 	"github.com/knadh/koanf/parsers/toml"
 	"github.com/knadh/koanf/providers/env"
@@ -267,60 +264,10 @@ func main() {
 	if err := ko.Unmarshal("upload", &uploadCfg); err != nil {
 		logger.Fatalf("error unmarshalling 'upload' config: %v", err)
 	}
-	var maxMemory int64 = 32 << 20
-	if uploadCfg.MaxMemory != "" {
-		x, err := units.ParseStrictBytes(uploadCfg.MaxMemory)
-		if err != nil {
-			logger.Fatalf("error unmarshalling 'upload.max-memory' config: %v", err)
-		}
-		maxMemory = x
-	}
 
-	uploadStore := upload.New(uploadCfg, maxMemory)
-
-	var maxUploadSize int64 = 32 << 20
-	if uploadCfg.MaxUploadSize != "" {
-		x, err := units.ParseStrictBytes(uploadCfg.MaxUploadSize)
-		if err != nil {
-			logger.Fatalf("error unmarshalling 'upload.max-upload-size' config: %v", err)
-		}
-		maxUploadSize = x
-	}
-
-	var maxAge time.Duration = time.Hour * 24 * 30 * 12
-	if uploadCfg.MaxAge != "" {
-		x, err := tparse.AbsoluteDuration(time.Now(), uploadCfg.MaxAge)
-		if err != nil {
-			logger.Fatalf("error unmarshalling 'upload.max-age' config: %v", err)
-		}
-		maxAge = x
-	}
-
-	var rlPeriod time.Duration = time.Minute
-	if uploadCfg.RateLimitPeriod != "" {
-		x, err := tparse.AbsoluteDuration(time.Now(), uploadCfg.RateLimitPeriod)
-		if err != nil {
-			logger.Fatalf("error unmarshalling 'upload.rate-limit-period' config: %v", err)
-		}
-		rlPeriod = x
-	}
-
-	rlCount := 20.0
-	if uploadCfg.RateLimitCount != "" {
-		x, err := strconv.ParseFloat(uploadCfg.RateLimitCount, 64)
-		if err != nil {
-			logger.Fatalf("error unmarshalling 'upload.rate-limit-count' config: %v", err)
-		}
-		rlCount = x
-	}
-
-	rlBurst := 1
-	if uploadCfg.RateLimitBurst != "" {
-		x, err := strconv.Atoi(uploadCfg.RateLimitBurst)
-		if err != nil {
-			logger.Fatalf("error unmarshalling 'upload.rate-limit-burst' config: %v", err)
-		}
-		rlBurst = x
+	uploadStore := upload.New(uploadCfg)
+	if err := uploadStore.Init(); err != nil {
+		logger.Fatalf("error initializing upload store: %v", err)
 	}
 
 	// Register HTTP routes.
@@ -333,8 +280,8 @@ func main() {
 	r.Delete("/api/rooms/{roomID}/login", wrap(handleLogout, app, hasAuth|hasRoom))
 	r.Post("/api/rooms", wrap(handleCreateRoom, app, 0))
 
-	r.Post("/api/rooms/{roomID}/upload", handleUpload(uploadStore, maxUploadSize, rlPeriod, rlCount, rlBurst))
-	r.Get("/api/rooms/{roomID}/uploaded/{fileID}", handleUploaded(uploadStore, maxAge))
+	r.Post("/api/rooms/{roomID}/upload", handleUpload(uploadStore))
+	r.Get("/api/rooms/{roomID}/uploaded/{fileID}", handleUploaded(uploadStore))
 
 	// Views.
 	r.Get("/r/{roomID}", wrap(handleRoomPage, app, hasAuth|hasRoom))

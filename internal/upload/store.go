@@ -4,8 +4,12 @@ import (
 	"crypto/sha1"
 	"errors"
 	"fmt"
+	"strconv"
 	"sync"
 	"time"
+
+	"github.com/alecthomas/units"
+	tparse "github.com/karrick/tparse/v2"
 )
 
 // Config represents the file upload options.
@@ -20,11 +24,75 @@ type Config struct {
 
 // Store file uploads in memory.
 type Store struct {
-	cfg    Config
-	maxMem int64
-	mu     sync.Mutex
-	items  map[string]File
-	size   int64
+	cfg   Config
+	mu    sync.Mutex
+	items map[string]File
+	size  int64
+
+	MaxMemory     int64
+	MaxUploadSize int64
+	MaxAge        time.Duration
+	RlPeriod      time.Duration
+	RlCount       float64
+	RlBurst       int
+}
+
+//Init the store, parsing configuration values.
+func (s *Store) Init() error {
+	s.MaxMemory = 32 << 20
+	if s.cfg.MaxMemory != "" {
+		x, err := units.ParseStrictBytes(s.cfg.MaxMemory)
+		if err != nil {
+			return fmt.Errorf("error unmarshalling 'upload.max-memory' config: %v", err)
+		}
+		s.MaxMemory = x
+	}
+
+	s.MaxUploadSize = 32 << 20
+	if s.cfg.MaxUploadSize != "" {
+		x, err := units.ParseStrictBytes(s.cfg.MaxUploadSize)
+		if err != nil {
+			return fmt.Errorf("error unmarshalling 'upload.max-upload-size' config: %v", err)
+		}
+		s.MaxUploadSize = x
+	}
+
+	s.MaxAge = time.Hour * 24 * 30 * 12
+	if s.cfg.MaxAge != "" {
+		x, err := tparse.AbsoluteDuration(time.Now(), s.cfg.MaxAge)
+		if err != nil {
+			return fmt.Errorf("error unmarshalling 'upload.max-age' config: %v", err)
+		}
+		s.MaxAge = x
+	}
+
+	s.RlPeriod = time.Minute
+	if s.cfg.RateLimitPeriod != "" {
+		x, err := tparse.AbsoluteDuration(time.Now(), s.cfg.RateLimitPeriod)
+		if err != nil {
+			return fmt.Errorf("error unmarshalling 'upload.rate-limit-period' config: %v", err)
+		}
+		s.RlPeriod = x
+	}
+
+	s.RlCount = 20.0
+	if s.cfg.RateLimitCount != "" {
+		x, err := strconv.ParseFloat(s.cfg.RateLimitCount, 64)
+		if err != nil {
+			return fmt.Errorf("error unmarshalling 'upload.rate-limit-count' config: %v", err)
+		}
+		s.RlCount = x
+	}
+
+	s.RlBurst = 1
+	if s.cfg.RateLimitBurst != "" {
+		x, err := strconv.Atoi(s.cfg.RateLimitBurst)
+		if err != nil {
+			return fmt.Errorf("error unmarshalling 'upload.rate-limit-burst' config: %v", err)
+		}
+		s.RlBurst = x
+	}
+	return nil
 }
 
 // File represents an upload.
@@ -37,11 +105,10 @@ type File struct {
 }
 
 // New returns a new file uplod store.
-func New(cfg Config, maxMemory int64) *Store {
+func New(cfg Config) *Store {
 	return &Store{
-		cfg:    cfg,
-		maxMem: maxMemory,
-		items:  make(map[string]File),
+		cfg:   cfg,
+		items: make(map[string]File),
 	}
 }
 
@@ -64,7 +131,7 @@ func (s *Store) Add(name, mimeType string, data []byte) (File, error) {
 	copy(up.Data, data)
 	s.items[id] = up
 	s.size += int64(len(data))
-	for s.size > s.maxMem {
+	for s.size > s.MaxMemory {
 		var oldest *File
 		for _, up := range s.items {
 			if oldest == nil {
