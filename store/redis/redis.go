@@ -77,6 +77,19 @@ func (r *Redis) AddRoom(room store.Room, ttl time.Duration) error {
 	return c.Flush()
 }
 
+// AddPredefinedRoom adds a room to the store.
+func (r *Redis) AddPredefinedRoom(room store.Room) error {
+	c := r.pool.Get()
+	defer c.Close()
+
+	key := fmt.Sprintf(r.cfg.PrefixRoom, room.ID)
+	c.Send("HMSET", key,
+		"name", room.Name,
+		"created_at", room.CreatedAt.Format(time.RFC3339),
+		"password", room.Password)
+	return c.Flush()
+}
+
 // ExtendRoomTTL extends a room's TTL.
 func (r *Redis) ExtendRoomTTL(id string, ttl time.Duration) error {
 	c := r.pool.Get()

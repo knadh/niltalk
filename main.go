@@ -30,6 +30,7 @@ import (
 	"github.com/knadh/niltalk/store/redis"
 	"github.com/knadh/stuffbin"
 	flag "github.com/spf13/pflag"
+	"golang.org/x/crypto/bcrypt"
 )
 
 var (
@@ -250,6 +251,28 @@ func main() {
 	}
 
 	app.hub = hub.NewHub(app.cfg, store, logger)
+
+	if err := ko.Unmarshal("rooms", &app.cfg.Rooms); err != nil {
+		logger.Fatalf("error unmarshalling 'rooms' config: %v", err)
+	}
+	// setup predefined rooms
+	for _, room := range app.cfg.Rooms {
+		pwdHash, err := bcrypt.GenerateFromPassword([]byte(room.Password), 8)
+		if err != nil {
+			logger.Printf("error hashing password: %v", err)
+			return
+		}
+		r, err := app.hub.AddPredefinedRoom(room.ID, room.Name, pwdHash)
+		if err != nil {
+			logger.Printf("error creating a predefined room %q: %v", room.Name, err)
+			continue
+		}
+		_, err = app.hub.ActivateRoom(r.ID)
+		if err != nil {
+			logger.Printf("error activating a predefined room %q: %v", room.Name, err)
+			continue
+		}
+	}
 
 	// Compile static templates.
 	tpl, err := stuffbin.ParseTemplatesGlob(nil, app.fs, "/static/templates/*.html")

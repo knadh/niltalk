@@ -34,11 +34,12 @@ type peerReq struct {
 
 // Room represents a chat room.
 type Room struct {
-	ID       string
-	Name     string
-	Password []byte
-	hub      *Hub
-	mut      *sync.RWMutex
+	ID         string
+	Name       string
+	Password   []byte
+	Predefined bool
+	hub        *Hub
+	mut        *sync.RWMutex
 
 	lastActivity time.Time
 
@@ -62,11 +63,11 @@ type Room struct {
 }
 
 // NewRoom returns a new instance of Room.
-func NewRoom(id, name string, password []byte, h *Hub) *Room {
+func NewRoom(id, name string, password []byte, predefined bool, h *Hub) *Room {
 	return &Room{
-		ID:           id,
-		Name:         name,
-		Password:     password,
+		ID:       id,
+		Name:     name,
+		Password: password, Predefined: predefined,
 		hub:          h,
 		peers:        make(map[*Peer]bool, 100),
 		broadcastQ:   make(chan []byte, 100),
@@ -165,9 +166,11 @@ loop:
 			}
 
 			// Extend the room's expiry (once every 30 seconds).
-			if time.Since(r.timestamp) > time.Duration(30)*time.Second {
-				r.timestamp = time.Now()
-				r.extendTTL()
+			if !r.Predefined {
+				if time.Since(r.timestamp) > time.Duration(30)*time.Second {
+					r.timestamp = time.Now()
+					r.extendTTL()
+				}
 			}
 
 		// Kill the room after the inactivity period.

@@ -14,7 +14,7 @@
 		<h3>Join room</h3>
 		<p>
 			<input :autofocus="'autofocus'" v-model="password" ref="form-password" type="password" name="password" placeholder="Password"
-				required minlength="6" maxlength="100" autocomplete="off" />
+				{{if not .Data.Room.Predefined}}required minlength="6"{{end}} maxlength="100" autocomplete="off" />
 		</p>
 		<p>
 			<input v-model="handle" type="text" name="handle" placeholder="Nick name (optional)" pattern=".{3,30}"
@@ -90,7 +90,9 @@
 
 					<div class="right">
 						<a href="" v-on:click.prevent="handleLogout" class="btn-dispose">Logout</a>
+ 						{{if not .Data.Room.Predefined}}
 						<a href="" v-on:click.prevent="handleDisposeRoom" class="btn-dispose">Dispose &times;</a>
+ 						{{end}}
 					</div>
 					<!-- <div class="sounds">
 							<input v-model="hasSound" type="checkbox" checked="true" id="chk-sounds" />

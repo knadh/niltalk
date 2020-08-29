@@ -139,7 +139,9 @@ func (p *Peer) processMessage(b []byte) {
 
 	// Dipose of a room.
 	case TypeRoomDispose:
-		p.room.Dispose()
+		if !p.room.Predefined {
+			p.room.Dispose()
+		}
 	default:
 	}
 }
