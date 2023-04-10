@@ -3,6 +3,7 @@
 <html lang="en">
 <head>
 	<title>{{ if .Data.Title }} {{ .Data.Title }} - Niltalk {{ else }}Niltalk &mdash; Instant disposable chat rooms{{ end }}</title>
+	<base href="{{ .Config.RootURL }}">
 	<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
 	<meta name="description" content="{{ .Data.Description }}" />
 	<meta name="keywords" content="instant chat, disposable chat" />
