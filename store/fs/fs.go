@@ -64,7 +64,7 @@ func (m *File) cleanup() {
 	now := time.Now()
 
 	for id, r := range m.rooms {
-		if r.Expire.Before(now) {
+		if !r.Expire.IsZero() && r.Expire.Before(now) {
 			delete(m.rooms, id)
 			m.dirty = true
 			continue
@@ -127,6 +127,21 @@ func (m *File) AddRoom(r store.Room, ttl time.Duration) error {
 	m.rooms[key] = &room{
 		Room:     r,
 		Expire:   r.CreatedAt.Add(ttl),
+		Sessions: map[string]string{},
+	}
+	m.dirty = true
+
+	return nil
+}
+
+// AddPredefinedRoom adds a room to the store.
+func (m *File) AddPredefinedRoom(r store.Room) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+
+	key := r.ID
+	m.rooms[key] = &room{
+		Room:     r,
 		Sessions: map[string]string{},
 	}
 	m.dirty = true

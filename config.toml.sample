@@ -38,6 +38,13 @@ websocket_timeout = "3s"
 # Session cookie name.
 session_cookie = "niltoken"
 
+# A list of predefined rooms.
+[rooms]
+[rooms.local]
+id="local"
+name="local"
+password=""
+
 # Storage kind, one of redis|memory|fs.
 storage = "redis"
 
