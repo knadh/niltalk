@@ -1,40 +1,51 @@
-LAST_COMMIT := $(shell git rev-parse --short HEAD)
-LAST_COMMIT_DATE := $(shell git show -s --format=%ci ${LAST_COMMIT})
-VERSION := $(shell git describe)
-BUILDSTR := ${VERSION} (${LAST_COMMIT} $(shell date -u +"%Y-%m-%dT%H:%M:%S%z"))
+# Try to get the commit hash from 1) git 2) the VERSION file 3) fallback.
+LAST_COMMIT := $(or $(shell git rev-parse --short HEAD 2> /dev/null),$(shell head -n 1 VERSION | grep -oP -m 1 "^[a-z0-9]+$$"),"UNKNOWN")
+
+# Try to get the semver from 1) git 2) the VERSION file 3) fallback.
+VERSION := $(or $(shell git describe --tags --abbrev=0 2> /dev/null),$(shell grep -oP "tag: \K(.*)(?=,)" VERSION),"v0.0.0")
+
+BUILDSTR := ${VERSION} (\#${LAST_COMMIT} $(shell date -u +"%Y-%m-%dT%H:%M:%S%z"))
+
+YARN ?= yarn
+GOPATH ?= $(HOME)/go
+STUFFBIN ?= $(GOPATH)/bin/stuffbin
 
 BIN := niltalk
 STATIC := static/templates static/static:/static config.toml.sample
 
-.PHONY: deps
-deps:
-	# If dependencies are not installed, install.
-	go get -u github.com/knadh/stuffbin/...
-
 .PHONY: build
-build:
-	go build -o ${BIN} -ldflags="-s -w -X 'main.buildString=${BUILDSTR}'"
+build: $(BIN)
+
+$(STUFFBIN):
+	go install github.com/knadh/stuffbin/...
+
+$(BIN): $(shell find . -type f -name "*.go")
+	CGO_ENABLED=0 go build -o ${BIN} -ldflags="-s -w -X 'main.buildString=${BUILDSTR}' -X 'main.versionString=${VERSION}'" *.go
 
 .PHONY: run
-run: build
-	 ./${BIN}
+run:
+	CGO_ENABLED=0 go run -ldflags="-s -w -X 'main.buildString=${BUILDSTR}' -X 'main.versionString=${VERSION}'" *.go
 
-.PHONY: dist
-dist: build deps
-	stuffbin -a stuff -in ${BIN} -out ${BIN} ${STATIC}
-
-# pack-releases runns stuffbin packing on a given list of
-# binaries. This is used with goreleaser for packing
-# release builds for cross-build targets.
-.PHONY: pack-releases
-pack-releases: deps
-	$(foreach var,$(RELEASE_BUILDS),stuffbin -a stuff -in ${var} -out ${var} ${STATIC} $(var);)
-
+# Run Go tests.
 .PHONY: test
 test:
-	go test
+	go test ./...
 
-.PHONE: clean
-clean:
-	go clean
-	- rm -f ${BIN}
+.PHONY: dist
+dist: $(STUFFBIN) build pack-bin
+
+# pack-releases runns stuffbin packing on the given binary. This is used
+# in the .goreleaser post-build hook.
+.PHONY: pack-bin
+pack-bin: $(BIN) $(STUFFBIN)
+	$(STUFFBIN) -a stuff -in ${BIN} -out ${BIN} ${STATIC}
+
+# Use goreleaser to do a dry run producing local builds.
+.PHONY: release-dry
+release-dry:
+	goreleaser --parallelism 1 --rm-dist --snapshot --skip-validate --skip-publish
+
+# Use goreleaser to build production releases and publish them.
+.PHONY: release
+release:
+	goreleaser --parallelism 1 --rm-dist --skip-validate

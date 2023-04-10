@@ -1,21 +1,25 @@
 env:
   - GO111MODULE=on
   - CGO_ENABLED=0
-  - RELEASE_BUILDS=dist/niltalk_darwin_amd64/niltalk dist/niltalk_linux_amd64/niltalk dist/niltalk_windows_amd64/niltalk.exe
 
 builds:
   - binary: niltalk
+    main: ./
     goos:
-      - linux
-      - darwin
       - windows
+      - darwin
+      - linux
+      - freebsd
+      - openbsd
+      - netbsd
     goarch:
       - amd64
     ldflags:
-      - -s -w -X "main.buildString={{ .Tag }} ({{ .ShortCommit }} {{ .Date }})"
+      - -s -w -X "main.buildString={{ .Tag }} ({{ .ShortCommit }} {{ .Date }})" -X "main.versionString={{ .Tag }}"
+
     hooks:
-    # stuff binaries with static assets.
-      post: make pack-releases
+      # stuff executables with static assets.
+      post: make pack-bin BIN={{ .Path }}
 
 archives:
   - format: tar.gz
