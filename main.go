@@ -9,6 +9,7 @@ import (
 	"html/template"
 	"io/ioutil"
 	"log"
+	"net"
 	"net/http"
 	"os"
 	"os/signal"
@@ -155,13 +156,7 @@ func initFS(staticDir string) stuffbin.FileSystem {
 func catchInterrupts() {
 	c := make(chan os.Signal, 1)
 	signal.Notify(c, syscall.SIGINT, syscall.SIGTERM, syscall.SIGKILL)
-	go func() {
-		for sig := range c {
-			// Shutdown.
-			logger.Printf("shutting down: %v", sig)
-			os.Exit(0)
-		}
-	}()
+	logger.Printf("shutting down: %v", <-c)
 }
 
 func newConfigFile() error {
@@ -241,12 +236,12 @@ func main() {
 	}
 
 	if ko.Bool("onion") {
-		pk, err := getOrCreatePK(store)
+		pk, err := loadTorPK(app.cfg, store)
 		if err != nil {
-			logger.Fatal(err)
+			logger.Fatalf("could not read or write the private key: %v", err)
 		}
 		fmt.Printf("http://%v.onion\n", onionAddr(pk))
-		os.Exit(0)
+		return // to allow for defers to execute
 	}
 
 	app.hub = hub.NewHub(app.cfg, store, logger)
@@ -275,31 +270,40 @@ func main() {
 	})
 
 	// Start the app.
-	var srv interface {
-		ListenAndServe() error
+	lnAddr := ko.String("app.address")
+	ln, err := net.Listen("tcp", lnAddr)
+	if err != nil {
+		logger.Fatalf("couldn't listen address %q: %v", lnAddr, err)
 	}
 
-	if appAddress := ko.String("app.address"); appAddress == "tor" {
-		pk, err := getOrCreatePK(store)
+	if app.cfg.Tor {
+		pk, err := loadTorPK(app.cfg, store)
 		if err != nil {
-			logger.Fatalf("could not create the private key file: %v", err)
+			logger.Fatalf("could not read or write the private key: %v", err)
 		}
 
-		srv = &torServer{
+		srv := &torServer{
 			PrivateKey: pk,
 			Handler:    r,
 		}
-		logger.Printf("starting server on http://%v.onion", onionAddr(pk))
+		onionAddr := fmt.Sprintf("http://%v.onion", onionAddr(pk))
+		logger.Printf("starting hidden service on %v", onionAddr)
+		go func() {
+			if err := srv.Serve(ln); err != nil {
+				logger.Fatalf("couldn't serve hidden service %q: %v", onionAddr, err)
+			}
+		}()
+	}
 
-	} else {
-		srv = &http.Server{
-			Addr:    appAddress,
-			Handler: r,
+	srv := http.Server{
+		Handler: r,
+	}
+	logger.Printf("starting server on http://%v", lnAddr)
+	go func() {
+		if err := srv.Serve(ln); err != nil {
+			logger.Fatalf("couldn't serve: %v", err)
 		}
-		logger.Printf("starting server on http://%v", appAddress)
-	}
+	}()
 
-	if err := srv.ListenAndServe(); err != nil {
-		logger.Fatalf("couldn't start server: %v", err)
-	}
+	catchInterrupts()
 }
