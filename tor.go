@@ -7,8 +7,8 @@ import (
 	"crypto/x509"
 	"encoding/pem"
 	"fmt"
-	"io/ioutil"
 	"net/http"
+	"os"
 	"time"
 
 	"github.com/cretz/bine/tor"
@@ -35,7 +35,7 @@ func getOrCreatePK(store store.Store) (privateKey ed25519.PrivateKey, err error)
 	} else {
 		block, _ := pem.Decode(d)
 		x509Encoded := block.Bytes
-		var tPk interface{}
+		var tPk any
 		tPk, err = x509.ParsePKCS8PrivateKey(x509Encoded)
 		if err != nil {
 			return nil, err
@@ -60,15 +60,14 @@ func onionAddr(pk ed25519.PrivateKey) string {
 }
 
 func (ts *torServer) ListenAndServe() error {
-
-	d, err := ioutil.TempDir("", "")
+	d, err := os.MkdirTemp("", "")
 	if err != nil {
 		return err
 	}
 
 	// Start tor with default config (can set start conf's DebugWriter to os.Stdout for debug logs)
 	// fmt.Println("Starting and registering onion service, please wait a couple of minutes...")
-	t, err := tor.Start(nil, &tor.StartConf{TempDataDirBase: d, NoHush: true})
+	t, err := tor.Start(context.TODO(), &tor.StartConf{TempDataDirBase: d, NoHush: true})
 	if err != nil {
 		return fmt.Errorf("unable to start Tor: %v", err)
 	}

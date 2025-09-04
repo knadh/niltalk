@@ -7,14 +7,11 @@ import (
 	"errors"
 	"fmt"
 	"html/template"
-	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
-	"os/signal"
 	"path/filepath"
 	"strings"
-	"syscall"
 	"time"
 
 	"github.com/go-chi/chi"
@@ -149,21 +146,6 @@ func initFS(staticDir string) stuffbin.FileSystem {
 	return fs
 }
 
-// Catch OS interrupts and respond accordingly.
-// This is not fool proof as http keeps listening while
-// existing rooms are shut down.
-func catchInterrupts() {
-	c := make(chan os.Signal, 1)
-	signal.Notify(c, syscall.SIGINT, syscall.SIGTERM, syscall.SIGKILL)
-	go func() {
-		for sig := range c {
-			// Shutdown.
-			logger.Printf("shutting down: %v", sig)
-			os.Exit(0)
-		}
-	}()
-}
-
 func newConfigFile() error {
 	if _, err := os.Stat("config.toml"); !os.IsNotExist(err) {
 		return errors.New("config.toml exists. Remove it to generate a new one")
@@ -177,7 +159,7 @@ func newConfigFile() error {
 		return fmt.Errorf("error reading sample config (is binary stuffed?): %v", err)
 	}
 
-	return ioutil.WriteFile("config.toml", b, 0644)
+	return os.WriteFile("config.toml", b, 0644)
 }
 
 func main() {
@@ -200,7 +182,8 @@ func main() {
 
 	// Initialize store.
 	var store store.Store
-	if app.cfg.Storage == "redis" {
+	switch app.cfg.Storage {
+	case "redis":
 		var storeCfg redis.Config
 		if err := ko.Unmarshal("store", &storeCfg); err != nil {
 			logger.Fatalf("error unmarshalling 'store' config: %v", err)
@@ -212,7 +195,7 @@ func main() {
 		}
 		store = s
 
-	} else if app.cfg.Storage == "memory" {
+	case "memory":
 		var storeCfg mem.Config
 		if err := ko.Unmarshal("store", &storeCfg); err != nil {
 			logger.Fatalf("error unmarshalling 'store' config: %v", err)
@@ -224,7 +207,7 @@ func main() {
 		}
 		store = s
 
-	} else if app.cfg.Storage == "fs" {
+	case "fs":
 		var storeCfg fs.Config
 		if err := ko.Unmarshal("store", &storeCfg); err != nil {
 			logger.Fatalf("error unmarshalling 'store' config: %v", err)
@@ -236,7 +219,7 @@ func main() {
 		}
 		store = s
 
-	} else {
+	default:
 		logger.Fatal("app.storage must be one of redis|memory|fs")
 	}
 

@@ -26,11 +26,6 @@ type Peer struct {
 	lastMessage time.Time
 }
 
-type peerInfo struct {
-	ID     string `json:"id"`
-	Handle string `json:"handle"`
-}
-
 // newPeer returns a new instance of Peer.
 func newPeer(id, handle string, ws *websocket.Conn, room *Room) *Peer {
 	return &Peer{
@@ -64,17 +59,9 @@ func (p *Peer) RunListener() {
 // peer's WS connection. This should be invoked as a goroutine.
 func (p *Peer) RunWriter() {
 	defer p.ws.Close()
-	for {
-		select {
-		// Wait for outgoing message to appear in the channel.
-		case message, ok := <-p.dataQ:
-			if !ok {
-				p.writeWSData(websocket.CloseMessage, []byte{})
-				return
-			}
-			if err := p.writeWSData(websocket.TextMessage, message); err != nil {
-				return
-			}
+	for message := range p.dataQ {
+		if err := p.writeWSData(websocket.TextMessage, message); err != nil {
+			return
 		}
 	}
 }
@@ -92,7 +79,7 @@ func (p *Peer) writeWSData(msgType int, payload []byte) error {
 
 // writeWSControl writes the given control payload to the peer's WS connection.
 func (p *Peer) writeWSControl(control int, payload []byte) error {
-	return p.ws.WriteControl(websocket.CloseMessage, payload, time.Time{})
+	return p.ws.WriteControl(control, payload, time.Time{})
 }
 
 // processMessage processes incoming messages from peers.

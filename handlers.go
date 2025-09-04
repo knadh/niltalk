@@ -4,7 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"io/ioutil"
+	"io"
 	"net/http"
 
 	"github.com/go-chi/chi"
@@ -32,8 +32,8 @@ type reqCtx struct {
 
 // jsonResp is the envelope for all JSON API responses.
 type jsonResp struct {
-	Error *string     `json:"error"`
-	Data  interface{} `json:"data"`
+	Error *string `json:"error"`
+	Data  any     `json:"data"`
 }
 
 // tplWrap is the envelope for all HTML template executions.
@@ -45,7 +45,7 @@ type tpl struct {
 type tplData struct {
 	Title       string
 	Description string
-	Room        interface{}
+	Room        any
 	Auth        bool
 }
 
@@ -203,7 +203,7 @@ func handleWS(w http.ResponseWriter, r *http.Request) {
 }
 
 // respondJSON responds to an HTTP request with a generic payload or an error.
-func respondJSON(w http.ResponseWriter, data interface{}, err error, statusCode int) {
+func respondJSON(w http.ResponseWriter, data any, err error, statusCode int) {
 	if statusCode == 0 {
 		statusCode = http.StatusOK
 	}
@@ -329,9 +329,9 @@ func wrap(next http.HandlerFunc, app *App, opts uint8) http.HandlerFunc {
 }
 
 // readJSONReq reads the JSON body from a request and unmarshals it to the given target.
-func readJSONReq(r *http.Request, o interface{}) error {
+func readJSONReq(r *http.Request, o any) error {
 	defer r.Body.Close()
-	b, err := ioutil.ReadAll(r.Body)
+	b, err := io.ReadAll(r.Body)
 	if err != nil {
 		return err
 	}

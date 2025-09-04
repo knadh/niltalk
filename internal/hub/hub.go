@@ -110,7 +110,7 @@ func (h *Hub) ActivateRoom(id string) (*Room, error) {
 // GetRoom retrives an active room from the hub.
 func (h *Hub) GetRoom(id string) *Room {
 	h.mut.Lock()
-	r, _ := h.rooms[id]
+	r := h.rooms[id]
 	h.mut.Unlock()
 	return r
 }
@@ -123,17 +123,6 @@ func (h *Hub) initRoom(id, name string, password []byte) *Room {
 	h.mut.Unlock()
 	go r.run()
 	return r
-}
-
-// getRooms returns the list of active rooms.
-func (h *Hub) getRooms() []*Room {
-	h.mut.RLock()
-	out := make([]*Room, 0, len(h.rooms))
-	for _, r := range h.rooms {
-		out = append(out, r)
-	}
-	h.mut.RUnlock()
-	return out
 }
 
 // removeRoom removes a room from the hub and the store.

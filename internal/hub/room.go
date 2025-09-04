@@ -2,16 +2,15 @@ package hub
 
 import (
 	"encoding/json"
-	"sync"
 	"time"
 
 	"github.com/gorilla/websocket"
 )
 
 type payloadMsgWrap struct {
-	Type      string      `json:"type"`
-	Timestamp time.Time   `json:"timestamp"`
-	Data      interface{} `json:"data"`
+	Type      string    `json:"type"`
+	Timestamp time.Time `json:"timestamp"`
+	Data      any       `json:"data"`
 }
 
 type payloadMsgPeer struct {
@@ -38,9 +37,6 @@ type Room struct {
 	Name     string
 	Password []byte
 	hub      *Hub
-	mut      *sync.RWMutex
-
-	lastActivity time.Time
 
 	// List of connected peers.
 	peers map[*Peer]bool
@@ -268,7 +264,7 @@ func (r *Room) makeMessagePayload(msg string, p *Peer) []byte {
 }
 
 // makePayload prepares a message payload.
-func (r *Room) makePayload(data interface{}, typ string) []byte {
+func (r *Room) makePayload(data any, typ string) []byte {
 	m := payloadMsgWrap{
 		Timestamp: time.Now(),
 		Type:      typ,
