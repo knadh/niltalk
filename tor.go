@@ -11,7 +11,6 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/clementauger/tor-prebuilt/embedded"
 	"github.com/cretz/bine/tor"
 	"github.com/cretz/bine/torutil"
 	tued25519 "github.com/cretz/bine/torutil/ed25519"
@@ -69,7 +68,7 @@ func (ts *torServer) ListenAndServe() error {
 
 	// Start tor with default config (can set start conf's DebugWriter to os.Stdout for debug logs)
 	// fmt.Println("Starting and registering onion service, please wait a couple of minutes...")
-	t, err := tor.Start(nil, &tor.StartConf{TempDataDirBase: d, ProcessCreator: embedded.NewCreator(), NoHush: true})
+	t, err := tor.Start(nil, &tor.StartConf{TempDataDirBase: d, NoHush: true})
 	if err != nil {
 		return fmt.Errorf("unable to start Tor: %v", err)
 	}

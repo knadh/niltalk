@@ -3,7 +3,6 @@ module github.com/knadh/niltalk
 go 1.13
 
 require (
-	github.com/clementauger/tor-prebuilt v0.0.0-20200815153310-0d7058794224
 	github.com/cretz/bine v0.2.0
 	github.com/fsnotify/fsnotify v1.6.0 // indirect
 	github.com/go-chi/chi v4.1.2+incompatible

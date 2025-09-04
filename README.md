@@ -17,6 +17,9 @@ Niltalk supports in-memory / file / Redis as the backend for persisting room and
 ### Docker
 The official Docker image `niltalk:latest` is [available here](https://hub.docker.com/r/kailashnadh/niltalk). To try out the app, copy [docker-compose.yml](docker-compose.yml) and run `docker-compose run niltalk`.
 
+### Tor Support
+To run Niltalk as a Tor hidden service, set `address = "tor"` in the config.toml file. This requires Tor to be installed on your system: When running in Tor mode, Niltalk will automatically create a persistent .onion address that will be displayed in the logs.
+
 ### Customisation
 The static HTML/JS/CSS assets can be customized. Copy the `static` directory from the repository, change the files, and do: `./niltalk --static-dir=/path/to/custom/static`
 
