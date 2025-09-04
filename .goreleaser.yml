@@ -49,4 +49,4 @@ dockers:
       - --label=org.opencontainers.image.licenses=AGPL-3.0
     dockerfile: Dockerfile
     extra_files:
-      - config.toml.sample
+      - config.sample.toml

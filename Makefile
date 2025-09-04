@@ -11,7 +11,7 @@ GOPATH ?= $(HOME)/go
 STUFFBIN ?= $(GOPATH)/bin/stuffbin
 
 BIN := niltalk
-STATIC := static/templates static/static:/static config.toml.sample
+STATIC := static/templates static/static:/static config.sample.toml
 
 .PHONY: build
 build: $(BIN)

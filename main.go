@@ -123,7 +123,7 @@ func initFS(staticDir string) stuffbin.FileSystem {
 			fs, err = stuffbin.NewLocalFS("./",
 				"./static/templates",
 				"./static/static:/static",
-				"config.toml.sample")
+				"config.sample.toml")
 			if err != nil {
 				log.Fatalf("error falling back to local filesystem: %v", err)
 			}
@@ -172,7 +172,7 @@ func newConfigFile() error {
 	// Initialize the static file system into which all
 	// required static assets (.sql, .js files etc.) are loaded.
 	fs := initFS("")
-	b, err := fs.Read("config.toml.sample")
+	b, err := fs.Read("config.sample.toml")
 	if err != nil {
 		return fmt.Errorf("error reading sample config (is binary stuffed?): %v", err)
 	}

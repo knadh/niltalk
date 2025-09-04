@@ -1,5 +1,5 @@
 FROM alpine:latest AS deploy
 WORKDIR /niltalk
 COPY niltalk .
-COPY config.toml.sample config.toml
+COPY config.sample.toml config.toml
 ENTRYPOINT [ "./niltalk" ]
