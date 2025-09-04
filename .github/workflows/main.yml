@@ -11,13 +11,13 @@ jobs:
     steps:
       -
         name: Checkout
-        uses: actions/checkout@v1
+        uses: actions/checkout@v3
 
       -
         name: Set up Go
-        uses: actions/setup-go@v1
+        uses: actions/setup-go@v5
         with:
-          go-version: 1.14.x
+          go-version: "1.24.1"
 
       - 
         name: Set Go tools bin path
@@ -30,7 +30,7 @@ jobs:
 
       -
         name: Run goreleaser
-        uses: goreleaser/goreleaser-action@v1
+        uses: goreleaser/goreleaser-action@v5
         with:
           version: latest
           args: release --rm-dist --skip-validate
