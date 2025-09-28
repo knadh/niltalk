@@ -97,7 +97,7 @@ func (m *InMemory) GetRoom(id string) (store.Room, error) {
 	out, ok := m.rooms[id]
 
 	if !ok {
-		return out.Room, store.ErrRoomNotFound
+		return store.Room{}, store.ErrRoomNotFound
 	}
 	return out.Room, nil
 }
