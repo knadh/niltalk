@@ -218,6 +218,7 @@ func main() {
 			log.Fatalf("error initializing store: %v", err)
 		}
 		store = s
+		defer s.Close()
 
 	default:
 		logger.Fatal("app.storage must be one of redis|memory|fs")
